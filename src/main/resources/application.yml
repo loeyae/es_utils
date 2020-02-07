@@ -1,0 +1,26 @@
+# application.yml
+#
+#Licensed under the Apache License, Version 2.0 (the "License"),
+#see LICENSE for more details: http://www.apache.org/licenses/LICENSE-2.0.
+#
+#:author:  Zhang Yi <loeyae@gmail.com>
+#:date:    2019-5-27 14:09:58
+#:ex:
+# group name:
+#     property: value
+#
+server:
+  port: 8081
+debug: false
+spring:
+  application:
+    name: loeyae
+
+logging:
+  level:
+    web: WARN
+    root: WARN
+  path: /var/log
+  file: loeyae-tools.log
+elasticsearch:
+  cluster-nodes: 192.168.7.231:9200, 192.168.7.231:9201, 192.168.7.231:9202
