@@ -33,9 +33,8 @@ public class ElasticSearchQueryBuilder {
             return matchAllQueryBuilder;
         }
         if (query.size() == 1) {
-            for (Map.Entry<String, Object> item : query.entrySet()) {
-                return ElasticSearchQueryFactory.build(item.getKey(), item.getValue());
-            }
+            Map.Entry<String, Object> item = query.entrySet().iterator().next();
+            return ElasticSearchQueryFactory.build(item.getKey(), item.getValue());
         }
         BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
         buildMultiQueryBuilder(boolQueryBuilder, query);
@@ -54,19 +53,19 @@ public class ElasticSearchQueryBuilder {
             Object mustNotQuery= query.get(JOIN_TYPE_MUST_NOT);
             Object shouldQuery = query.get(JOIN_TYPE_SHOULD);
             if (null != mustQuery && mustQuery instanceof List) {
-                for (Map<String, Object> mq: (List<Map>) mustQuery){
+                 ((List<Map>) mustQuery).forEach( mq->{
                     buildMustQuery(queryBuilder, mq);
-                }
+                });
             }
             if (null != mustNotQuery && mustNotQuery instanceof List) {
-                for (Map<String, Object> mnq: (List<Map>) mustNotQuery){
+                ((List<Map>) mustNotQuery).forEach ( mnq-> {
                     buildMustNotQuery(queryBuilder, mnq);
-                }
+                });
             }
             if (null != shouldQuery && shouldQuery instanceof List) {
-                for (Map<String, Object> sq: (List<Map>) shouldQuery){
+                ((List<Map>) shouldQuery).forEach ( sq-> {
                     buildShouldQuery(queryBuilder, sq);
-                }
+                });
             }
         } else {
             buildMustQuery(queryBuilder, query);

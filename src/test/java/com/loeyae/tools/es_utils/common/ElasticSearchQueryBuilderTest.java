@@ -24,15 +24,8 @@ class ElasticSearchQueryBuilderTest {
         Map<String, Integer> map = new HashMap<>();
         map.put("a", 1);
         map.put("b", 2);
-        System.out.print(map.entrySet().toArray()[0]);
-    }
-
-    @Test
-    void testBuildQueryBuilder() {
-    }
-
-    @Test
-    void testMatchQueryBulder() {
+        Map.Entry entry = (Map.Entry) map.entrySet().toArray()[0];
+        System.out.print(entry.getKey());
     }
 
     @Test
