@@ -93,9 +93,9 @@ public class ElasticSearchQueryFactory {
         if (Arrays.asList(UNARY_QUERY_TYPES).contains(key)) {
             return buildUnaryQueryBuilder(key, params);
         } else if (Arrays.asList(TWO_UNARY_QUERY_TYPES).contains(key)) {
-            return buildTwoUnaryQueryBuilder(key, (HashMap) params);
+            return buildTwoUnaryQueryBuilder(key, (Map) params);
         } else if (Arrays.asList(THREE_UNARY_QUERY_TYPES).contains(key)) {
-            return buildTreeUnaryQueryBuilder(key, (HashMap) params);
+            return buildTreeUnaryQueryBuilder(key, (Map) params);
         }
         return null;
     }
