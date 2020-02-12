@@ -1,11 +1,7 @@
 package com.loeyae.tools.es_utils.common;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONPath;
-import javafx.beans.binding.ObjectExpression;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.lucene.queryparser.xml.QueryBuilderFactory;
 import org.elasticsearch.index.query.*;
 
 import java.util.*;
@@ -31,8 +27,7 @@ public class ElasticSearchQueryBuilder {
      */
     static public QueryBuilder build(Map<String, Object>query) {
         if (null == query) {
-            MatchAllQueryBuilder matchAllQueryBuilder = QueryBuilders.matchAllQuery();
-            return matchAllQueryBuilder;
+            return build();
         }
         if (query.size() == 1 && containsJoinKey(query) == false) {
             Map.Entry<String, Object> item = query.entrySet().iterator().next();
@@ -50,6 +45,9 @@ public class ElasticSearchQueryBuilder {
      * @return
      */
     static public QueryBuilder build(List<Map<String, Object>> params) {
+        if (null == params) {
+            return build();
+        }
         Map<String, Object> query = new HashMap<>();
         query.put(ElasticSearchQueryBuilder.JOIN_TYPE_MUST, params);
         return build(query);
@@ -62,12 +60,25 @@ public class ElasticSearchQueryBuilder {
      * @return
      */
     static public QueryBuilder build(String jsonString) {
+        if (null == jsonString) {
+            return build();
+        }
         JSON json = JSON.parseObject(jsonString);
         Object query = JSONPath.eval(json, "$");
         if (query instanceof Map) {
             return build((Map)query);
         }
         return build((List)query);
+    }
+
+    /**
+     * 构建查询
+     *
+     * @return
+     */
+    static public QueryBuilder build() {
+        MatchAllQueryBuilder matchAllQueryBuilder = QueryBuilders.matchAllQuery();
+        return matchAllQueryBuilder;
     }
 
     /**

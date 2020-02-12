@@ -20,6 +20,10 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
@@ -60,6 +64,7 @@ public class ElasticSearchDocumentUtils {
      * @return
      */
     public boolean insert(String index, String type, Map<String, Object> source) {
+        System.out.print(restHighLevelClient);
         IndexRequest indexRequest = new IndexRequest(index, type);
         indexRequest.source(source);
         try {
@@ -221,22 +226,16 @@ public class ElasticSearchDocumentUtils {
      *
      * @param index
      * @param type
-     * @param doc
+     * @param script
      * @param search
      * @return
      */
-    public long updateByQuery(String index, String type, Map<String, Object> doc, Map<String,
+    public long updateByQuery(String index, String type, Script script, Map<String,
             Object> search) {
         UpdateByQueryRequest updateByQueryRequest = new UpdateByQueryRequest(index);
         updateByQueryRequest.setDocTypes(type);
         QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(search);
         updateByQueryRequest.setQuery(queryBuilder);
-        Settings.Builder settingsBuilder = Settings.builder();
-        doc.entrySet().forEach(item -> {
-            buildSettingsElement(settingsBuilder, item.getKey(), item.getValue());
-        });
-        Settings settings = settingsBuilder.build();
-        Script script = Script.parse(settings);
         updateByQueryRequest.setScript(script);
         try {
             BulkByScrollResponse bulkResponse =
@@ -249,40 +248,36 @@ public class ElasticSearchDocumentUtils {
     }
 
     /**
+     * 根据search条件更新数据
+     *
+     * @param index
+     * @param type
+     * @param doc
+     * @param search
+     * @return
+     */
+    public long updateByQuery(String index, String type, Map<String, Object> doc, Map<String,
+            Object> search) {
+        Settings.Builder settingsBuilder = Settings.builder();
+        doc.entrySet().forEach(item -> {
+            buildSettingsElement(settingsBuilder, item.getKey());
+        });
+        Settings settings = settingsBuilder.build();
+        String source = settings.toDelimitedString(';');;
+        System.out.println(source);
+        Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, Script.DEFAULT_SCRIPT_LANG, source
+                , doc);
+        return updateByQuery(index, type, script, search);
+    }
+
+    /**
      * 构建search参数
      *
      * @param builder
      * @param key
-     * @param value
      */
-    static public void buildSettingsElement(Settings.Builder builder, String key, Object value) {
-        if (value instanceof Integer) {
-            builder.put(key, (int) value);
-        } else if (value instanceof Long) {
-            builder.put(key, (long) value);
-        } else if (value instanceof Float) {
-            builder.put(key, (float) value);
-        } else if (value instanceof Double) {
-            builder.put(key, (double) value);
-        } else if (value instanceof Enum) {
-            builder.put(key, (Enum) value);
-        } else if (value instanceof Boolean) {
-            builder.put(key, (boolean) value);
-        } else if (value instanceof Class) {
-            builder.put(key, (Class) value);
-        } else if (value instanceof TimeValue) {
-            builder.put(key, (TimeValue) value);
-        } else if (value instanceof Path) {
-            builder.put(key, (Path) value);
-        } else if (value instanceof Level) {
-            builder.put(key, (Level) value);
-        } else if (value instanceof Version) {
-            builder.put(key, (Version) value);
-        } else if (value instanceof ByteSizeValue) {
-            builder.put(key, (ByteSizeValue) value);
-        } else {
-            builder.put(key, (String) value);
-        }
+    static public void buildSettingsElement(Settings.Builder builder, String key) {
+        builder.put("ctx._source."+ key, "params."+key);
     }
 
     /**
@@ -294,6 +289,8 @@ public class ElasticSearchDocumentUtils {
      * @return
      */
     public long deleteByQuery(String index, String type, Map<String, Object> search) {
+        assert null != search;
+        assert search.size() > 0;
         DeleteByQueryRequest deleteByQueryRequest = new DeleteByQueryRequest(index);
         deleteByQueryRequest.setDocTypes(type);
         QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(search);

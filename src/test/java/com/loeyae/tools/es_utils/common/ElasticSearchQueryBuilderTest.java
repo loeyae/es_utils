@@ -3,10 +3,7 @@ package com.loeyae.tools.es_utils.common;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONPath;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.TermQueryBuilder;
-import org.elasticsearch.index.query.TypeQueryBuilder;
+import org.elasticsearch.index.query.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +35,7 @@ class ElasticSearchQueryBuilderTest {
         JSON json = JSON.parseObject(queryBuilder.toString());
         assertTrue(queryBuilder instanceof BoolQueryBuilder);
         assertTrue(JSONPath.contains(json, "$.bool"));
-        assertFalse(JSONPath.contains(json, "$.bool.must"));
+        assertTrue(JSONPath.contains(json, "$.bool.must"));
         assertFalse(JSONPath.contains(json, "$.bool.must_not"));
         assertFalse(JSONPath.contains(json, "$.bool.should"));
         List<Map> list = new ArrayList<>();
@@ -47,7 +44,7 @@ class ElasticSearchQueryBuilderTest {
         JSON json1 = JSON.parseObject(queryBuilder1.toString());
         assertTrue(queryBuilder1 instanceof BoolQueryBuilder);
         assertTrue(JSONPath.contains(json1, "$.bool"));
-        assertFalse(JSONPath.contains(json1, "$.bool.must"));
+        assertTrue(JSONPath.contains(json1, "$.bool.must"));
         assertFalse(JSONPath.contains(json1, "$.bool.must_not"));
         assertFalse(JSONPath.contains(json1, "$.bool.should"));
         Map<String, Object> map1 = new HashMap<>();
@@ -83,6 +80,7 @@ class ElasticSearchQueryBuilderTest {
         list1.add(map4);
         QueryBuilder queryBuilder4 = ElasticSearchQueryBuilder.build(list1);
         JSON json4 = JSON.parseObject(queryBuilder4.toString());
+        assertTrue(queryBuilder4 instanceof BoolQueryBuilder);
         assertTrue(JSONPath.contains(json4, "$.bool"));
         assertTrue(JSONPath.contains(json4, "$.bool.must"));
         assertTrue(JSONPath.contains(json4, "$.bool.must.0.term"));
@@ -91,11 +89,21 @@ class ElasticSearchQueryBuilderTest {
         assertTrue(JSONPath.contains(json4, "$.bool.must.1.term.title"));
         String jsonString = "{'must': [{'term': {'field':'name', 'query':'test'}}]}";
         QueryBuilder queryBuilder5 = ElasticSearchQueryBuilder.build(jsonString);
+        assertTrue(queryBuilder5 instanceof BoolQueryBuilder);
         JSON json5 = JSON.parseObject(queryBuilder5.toString());
         assertTrue(JSONPath.contains(json5, "$.bool"));
         assertTrue(JSONPath.contains(json5, "$.bool.must"));
         assertTrue(JSONPath.contains(json5, "$.bool.must.0.term"));
         assertTrue(JSONPath.contains(json5, "$.bool.must.0.term.name"));
+        Map<String, Object> map5 = null;
+        QueryBuilder queryBuilder6 = ElasticSearchQueryBuilder.build(map5);
+        assertTrue(queryBuilder6 instanceof MatchAllQueryBuilder);
+        List<Map<String, Object>> list2 = null;
+        QueryBuilder queryBuilder7 = ElasticSearchQueryBuilder.build(list2);
+        assertTrue(queryBuilder7 instanceof MatchAllQueryBuilder);
+        QueryBuilder queryBuilder8 = ElasticSearchQueryBuilder.build((String)null);
+        assertTrue(queryBuilder8 instanceof MatchAllQueryBuilder);
+
     }
 
     @Test
