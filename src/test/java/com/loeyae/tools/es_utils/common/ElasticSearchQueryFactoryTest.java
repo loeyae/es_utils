@@ -42,6 +42,22 @@ class ElasticSearchQueryFactoryTest {
         param4.put(ElasticSearchQueryFactory.QUERY_PARAMS_TO, 10);
         QueryBuilder queryBuilder4 = ElasticSearchQueryFactory.build(key4, param4);
         assertTrue(queryBuilder4 instanceof RangeQueryBuilder);
+        QueryBuilder queryBuilder5 = ElasticSearchQueryFactory.build("name", "test");
+        assertTrue(queryBuilder5 instanceof TermQueryBuilder);
+        QueryBuilder queryBuilder6 = ElasticSearchQueryFactory.build("name", new String[]{"test1"
+                ,"test2"});
+        assertTrue(queryBuilder6 instanceof TermsQueryBuilder);
+        QueryBuilder queryBuilder7 = ElasticSearchQueryFactory.build("name",
+                new HashMap<String, Object>(){{
+                    put(ElasticSearchQueryFactory.QUERY_PARAMS_FROM, "1");
+                    put(ElasticSearchQueryFactory.QUERY_PARAMS_TO, "10");
+                }});
+        assertTrue(queryBuilder7 instanceof RangeQueryBuilder);
+        QueryBuilder queryBuilder8 = ElasticSearchQueryFactory.build("name", new ArrayList<Integer>(){{
+            add(1);
+            add(10);
+        }});
+        assertTrue(queryBuilder8 instanceof RangeQueryBuilder);
     }
 
     @Test

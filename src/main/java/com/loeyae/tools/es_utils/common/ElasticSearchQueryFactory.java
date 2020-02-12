@@ -6,10 +6,12 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -92,12 +94,29 @@ public class ElasticSearchQueryFactory {
     static public QueryBuilder build(String key, Object params) {
         if (Arrays.asList(UNARY_QUERY_TYPES).contains(key)) {
             return buildUnaryQueryBuilder(key, params);
-        } else if (Arrays.asList(TWO_UNARY_QUERY_TYPES).contains(key)) {
+        }
+        if (Arrays.asList(TWO_UNARY_QUERY_TYPES).contains(key)) {
             return buildTwoUnaryQueryBuilder(key, (Map) params);
-        } else if (Arrays.asList(THREE_UNARY_QUERY_TYPES).contains(key)) {
+        }
+        if (Arrays.asList(THREE_UNARY_QUERY_TYPES).contains(key)) {
             return buildTreeUnaryQueryBuilder(key, (Map) params);
         }
-        return null;
+        if (params instanceof Object[]) {
+            return QueryBuilders.termsQuery(key, params);
+        }
+        if (params instanceof List) {
+            RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery(key);
+            rangeQueryBuilder.from(((List) params).get(0));
+            if (((List) params).size() > 1) {
+                rangeQueryBuilder.to(((List) params).get(1));
+            }
+            return rangeQueryBuilder;
+        }
+        if (params instanceof Map) {
+            ((Map) params).put(ElasticSearchQueryFactory.QUERY_PARAMS_FIELD, key);
+            return buildTreeUnaryQueryBuilder(QUERY_TYPE_RANGE, (Map<String, Object>) params);
+        }
+        return QueryBuilders.termQuery(key, params);
     }
 
     /**
