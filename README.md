@@ -11,3 +11,5 @@ elasticsearch:
 elasticsearch:
   cluster-nodes: 192.168.0.2:9200,192.168.0.2:9300
 ```
+
+使用方法可参考单元测试。
