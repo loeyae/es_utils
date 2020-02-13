@@ -1,5 +1,7 @@
 package com.loeyae.tools.es_utils.component;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.loeyae.tools.es_utils.common.ElasticSearchQueryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.SearchRequest;
@@ -9,8 +11,6 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -19,10 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * elastic search query.
@@ -61,13 +58,13 @@ public class ElasticSearchQueryUtils {
 
         public void init(SearchResponse searchResponse) {
             this.searchResponse = searchResponse;
-            this.scrollId = searchResponse.getScrollId();
-            this.total = searchResponse.getHits().getTotalHits();
-            this.source = parseSource();
+            scrollId = searchResponse.getScrollId();
+            total = searchResponse.getHits().getTotalHits();
+            source = parseSource();
         }
 
         public List<Map<String, Object>> parseSource() {
-            List<Map<String, Object>> result =new ArrayList<>(this.searchResponse.getHits().getHits().length);
+            List<Map<String, Object>> result =new ArrayList<>(searchResponse.getHits().getHits().length);
             this.searchResponse.getHits().iterator().forEachRemaining(item -> {
                 result.add(item.getSourceAsMap());
             });
@@ -97,6 +94,16 @@ public class ElasticSearchQueryUtils {
 
         public SearchResponse getSearchResponse() {
             return searchResponse;
+        }
+
+        @Override
+        public String toString() {
+            Map<String, Object> jsonMap = new HashMap<String, Object>(){{
+                put("scrollId", scrollId);
+                put("total", total);
+                put("source", source);
+            }};
+            return JSONObject.toJSONString(jsonMap);
         }
 
     }
@@ -351,10 +358,10 @@ public class ElasticSearchQueryUtils {
         if (null != sort) {
             Map.Entry<String, Integer> c = sort.entrySet().iterator().next();
             FieldSortBuilder fieldSortBuilder = SortBuilders.fieldSort(c.getKey());
-            if (c.getValue() > 1) {
-                fieldSortBuilder.order(SortOrder.DESC);
-            } else {
+            if (c.getValue() > 0) {
                 fieldSortBuilder.order(SortOrder.ASC);
+            } else {
+                fieldSortBuilder.order(SortOrder.DESC);
             }
             searchSource.sort(fieldSortBuilder);
         }
