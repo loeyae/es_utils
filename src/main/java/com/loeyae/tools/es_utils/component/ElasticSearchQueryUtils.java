@@ -1,0 +1,373 @@
+package com.loeyae.tools.es_utils.component;
+
+import com.loeyae.tools.es_utils.common.ElasticSearchQueryBuilder;
+import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * elastic search query.
+ *
+ * @date: 2020-02-12
+ * @version: 1.0
+ * @author: zhangyi07@beyondsoft.com
+ */
+@Slf4j
+@Component
+public class ElasticSearchQueryUtils {
+
+    public static final int QUERY_FORM_NULL = -1;
+
+    public static final long QUERY_TIME_VALUE_SECONDS_NULL  = 0L;
+
+    private static final String DEFAULT_ERROR_MSG = "ES Error: ";
+
+    private static final SortOrder DEFAULT_SORT_TYPE = SortOrder.DESC;
+
+    @Autowired
+    RestHighLevelClient restHighLevelClient;
+
+    /**
+     * searchResponse 解析
+     */
+    static public class Result {
+
+        private SearchResponse searchResponse;
+
+        private String scrollId;
+
+        private long total;
+
+        private List<Map<String, Object>> source;
+
+        public void init(SearchResponse searchResponse) {
+            this.searchResponse = searchResponse;
+            this.scrollId = searchResponse.getScrollId();
+            this.total = searchResponse.getHits().getTotalHits();
+            this.source = parseSource();
+        }
+
+        public List<Map<String, Object>> parseSource() {
+            List<Map<String, Object>> result =new ArrayList<>(this.searchResponse.getHits().getHits().length);
+            this.searchResponse.getHits().iterator().forEachRemaining(item -> {
+                result.add(item.getSourceAsMap());
+            });
+            return result;
+        }
+
+        /**
+         * Iterator
+         *
+         * @return
+         */
+        public Iterator<Map<String, Object>> iterator() {
+            return source.iterator();
+        }
+
+        public String getScrollId() {
+            return scrollId;
+        }
+
+        public long getTotal() {
+            return total;
+        }
+
+        public List<Map<String, Object>> getSource() {
+            return source;
+        }
+
+        public SearchResponse getSearchResponse() {
+            return searchResponse;
+        }
+
+    }
+
+    /**
+     *
+     * @param searchResponse
+     * @return
+     */
+    static public Result result(SearchResponse searchResponse) {
+        Result result = new Result();
+        result.init(searchResponse);
+        return result;
+    }
+
+    /**
+     * search
+     *
+     * @param jsonString
+     * @param size
+     * @param from
+     * @param sort
+     * @param includeFields
+     * @param excludeFields
+     * @return
+     */
+    public SearchResponse search(String jsonString, int size, int from, Map<String, Integer>sort,
+                                 String[] includeFields, String[] excludeFields) {
+        SearchRequest searchRequest = buildRequest(jsonString, size, from,
+                QUERY_TIME_VALUE_SECONDS_NULL, sort, includeFields, excludeFields);
+        return query(searchRequest);
+    }
+
+    /**
+     * search
+     *
+     * @param query
+     * @param size
+     * @param from
+     * @param sort
+     * @param includeFields
+     * @param excludeFields
+     * @return
+     */
+    public SearchResponse search(List<Map<String, Object>> query, int size, int from, Map<String,
+            Integer>sort, String[] includeFields, String[] excludeFields) {
+        SearchRequest searchRequest = buildRequest(query, size, from,
+                QUERY_TIME_VALUE_SECONDS_NULL, sort, includeFields, excludeFields);
+        return query(searchRequest);
+    }
+
+    /**
+     * search
+     *
+     * @param search
+     * @param size
+     * @param from
+     * @param sort
+     * @param includeFields
+     * @param excludeFields
+     * @return
+     */
+    public SearchResponse search(Map<String, Object>search, int size, int from, Map<String,
+            Integer>sort, String[] includeFields, String[] excludeFields) {
+        SearchRequest searchRequest = buildRequest(search, size, from,
+                QUERY_TIME_VALUE_SECONDS_NULL, sort, includeFields, excludeFields);
+        return query(searchRequest);
+    }
+
+    /**
+     * search
+     *
+     * @param jsonString
+     * @param size
+     * @param timeValueSeconds
+     * @param sort
+     * @param includeFields
+     * @param excludeFields
+     * @return
+     */
+    public SearchResponse search(String jsonString, int size, long timeValueSeconds, Map<String,
+            Integer>sort, String[] includeFields, String[] excludeFields) {
+        SearchRequest searchRequest = buildRequest(jsonString, size, QUERY_FORM_NULL,
+                timeValueSeconds, sort, includeFields, excludeFields);
+        return query(searchRequest);
+    }
+
+    /**
+     * search
+     *
+     * @param query
+     * @param size
+     * @param timeValueSeconds
+     * @param sort
+     * @param includeFields
+     * @param excludeFields
+     * @return
+     */
+    public SearchResponse search(List<Map<String, Object>> query, int size, long timeValueSeconds
+            , Map<String, Integer>sort, String[] includeFields, String[] excludeFields) {
+        SearchRequest searchRequest = buildRequest(query, size, QUERY_FORM_NULL, timeValueSeconds
+                , sort, includeFields, excludeFields);
+        return query(searchRequest);
+    }
+
+    /**
+     * search
+     *
+     * @param search
+     * @param size
+     * @param timeValueSeconds
+     * @param sort
+     * @param includeFields
+     * @param excludeFields
+     * @return
+     */
+    public SearchResponse search(Map<String, Object>search, int size, long timeValueSeconds,
+                                 Map<String, Integer>sort, String[] includeFields, String[] excludeFields) {
+        SearchRequest searchRequest = buildRequest(search, size, QUERY_FORM_NULL,
+                timeValueSeconds, sort, includeFields, excludeFields);
+        return query(searchRequest);
+    }
+
+    /**
+     * scroll
+     *
+     * @param scrollId
+     * @param timeValueSeconds
+     * @return
+     */
+    public SearchResponse scroll(String scrollId, long timeValueSeconds) {
+        SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+        scrollRequest.scroll(TimeValue.timeValueSeconds(timeValueSeconds));
+        return query(scrollRequest);
+    }
+
+    /**
+     * 查询
+     *
+     * @param searchRequest
+     * @return
+     */
+    public SearchResponse query(SearchRequest searchRequest) {
+        try {
+            SearchResponse searchResponse = restHighLevelClient.search(searchRequest,
+                    RequestOptions.DEFAULT);
+            return searchResponse;
+        } catch (IOException e) {
+            log.error(DEFAULT_ERROR_MSG, e);
+        }
+        return null;
+    }
+
+    /**
+     * Scroll查询
+     *
+     * @param searchScrollRequest
+     * @return
+     */
+    public SearchResponse query(SearchScrollRequest searchScrollRequest) {
+        try {
+            SearchResponse searchResponse = restHighLevelClient.scroll(searchScrollRequest,
+                    RequestOptions.DEFAULT);
+            return searchResponse;
+        } catch (IOException e) {
+            log.error(DEFAULT_ERROR_MSG, e);
+        }
+        return null;
+    }
+
+    /**
+     * 构建SearchRequest
+     *
+     * @param query
+     * @param size
+     * @param from
+     * @param timeValueSeconds
+     * @param sort
+     * @param includeFields
+     * @param excludeFields
+     * @return
+     */
+    protected SearchRequest buildRequest(Map<String, Object> query, int size, int from,
+                                         long timeValueSeconds, Map<String, Integer> sort,
+                                         String[] includeFields, String[] excludeFields) {
+        QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(query);
+        return buildRequest(queryBuilder, size, from, timeValueSeconds, sort, includeFields,
+                excludeFields);
+    }
+
+    /**
+     * 构建SearchRequest
+     *
+     * @param query
+     * @param size
+     * @param from
+     * @param timeValueSeconds
+     * @param sort
+     * @param includeFields
+     * @param excludeFields
+     * @return
+     */
+    protected SearchRequest buildRequest(List<Map<String, Object>> query, int size, int from,
+                                         long timeValueSeconds, Map<String, Integer> sort,
+                                         String[] includeFields, String[] excludeFields) {
+        QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(query);
+        return buildRequest(queryBuilder, size, from, timeValueSeconds, sort, includeFields,
+                excludeFields);
+    }
+
+    /**
+     * 构建SearchRequest
+     * @param query
+     * @param size
+     * @param from
+     * @param timeValueSeconds
+     * @param sort
+     * @param includeFields
+     * @param excludeFields
+     * @return
+     */
+    protected SearchRequest buildRequest(String query, int size, int from,
+                                         long timeValueSeconds, Map<String, Integer> sort,
+                                         String[] includeFields, String[] excludeFields) {
+        QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(query);
+        return buildRequest(queryBuilder, size, from, timeValueSeconds, sort, includeFields,
+                excludeFields);
+    }
+
+    /**
+     * 构建SearchRequest
+     *
+     * @param query
+     * @param size
+     * @param from
+     * @param timeValueSeconds
+     * @param sort
+     * @param includeFields
+     * @param excludeFields
+     * @return
+     */
+    protected SearchRequest buildRequest(QueryBuilder query, int size, int from,
+                                         long timeValueSeconds, Map<String, Integer> sort,
+                                         String[] includeFields, String[] excludeFields) {
+        SearchRequest searchRequest = new SearchRequest();
+        SearchSourceBuilder searchSource = new SearchSourceBuilder();
+        searchSource.query(query);
+        searchSource.size(size);
+        if (timeValueSeconds <= 0 && from >= 0) {
+            searchSource.from(from);
+        }
+        if (null != sort) {
+            Map.Entry<String, Integer> c = sort.entrySet().iterator().next();
+            FieldSortBuilder fieldSortBuilder = SortBuilders.fieldSort(c.getKey());
+            if (c.getValue() > 1) {
+                fieldSortBuilder.order(SortOrder.DESC);
+            } else {
+                fieldSortBuilder.order(SortOrder.ASC);
+            }
+            searchSource.sort(fieldSortBuilder);
+        }
+        if (null != includeFields) {
+            searchSource.fetchSource(includeFields, null);
+        } else if (null != excludeFields) {
+            searchSource.fetchSource(null, excludeFields);
+        }
+        searchRequest.source(searchSource);
+        if (timeValueSeconds > 0) {
+            searchRequest.scroll(TimeValue.timeValueSeconds(timeValueSeconds));
+        }
+        return searchRequest;
+    }
+
+}
