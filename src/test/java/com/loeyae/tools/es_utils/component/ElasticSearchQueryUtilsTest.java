@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 class ElasticSearchQueryUtilsTest {
 
+    private static final String indexName = "zy-test";
+
     @Autowired
     ElasticSearchQueryUtils utils;
 
@@ -35,7 +37,7 @@ class ElasticSearchQueryUtilsTest {
 
     @Test
     void testSearchByNull() {
-        SearchResponse searchResponse = utils.search((String )null, 100,
+        SearchResponse searchResponse = utils.search(indexName, (String )null, 100,
                 ElasticSearchQueryUtils.QUERY_FORM_NULL, null, null, null);
         assertNotNull(searchResponse);
         assertTrue(RestStatus.OK == searchResponse.status());
@@ -43,8 +45,9 @@ class ElasticSearchQueryUtilsTest {
         assertNull(result.getScrollId());
         assertTrue(result.getTotal() > 0);
         assertTrue(result.getSource().size() > 0);
-        SearchResponse searchResponse1 = utils.search((String)null, 100, 0, new HashMap<String, Integer>(){{
-            put("id", 1);
+        SearchResponse searchResponse1 = utils.search(indexName, (String)null, 100, 0,
+                new HashMap<String, Integer>(){{
+                    put("id", 1);
         }}, null, null);
         assertNotNull(searchResponse1);
         assertTrue(RestStatus.OK == searchResponse1.status());
@@ -53,8 +56,8 @@ class ElasticSearchQueryUtilsTest {
         assertTrue(result1.getTotal() > 0);
         assertTrue(result1.getSource().size() > 0);
         assertTrue(result.toString().equals(result1.toString()));
-        SearchResponse searchResponse2 = utils.search((String)null, 100, 0, new HashMap<String,
-                Integer>(){{
+        SearchResponse searchResponse2 = utils.search(indexName, (String)null, 100, 0,
+                new HashMap<String, Integer>(){{
             put("id", -1);
         }}, null, null);
         assertNotNull(searchResponse2);
@@ -67,11 +70,38 @@ class ElasticSearchQueryUtilsTest {
     }
 
     @Test
+    void  testSearchByNullWithFields() {
+        SearchResponse searchResponse = utils.search(indexName, (String )null, 100,
+                ElasticSearchQueryUtils.QUERY_FORM_NULL, null, new String[]{"id", "amount"}, null);
+        assertNotNull(searchResponse);
+        assertTrue(RestStatus.OK == searchResponse.status());
+        ElasticSearchQueryUtils.Result result = ElasticSearchQueryUtils.result(searchResponse);
+        assertNull(result.getScrollId());
+        assertTrue(result.getTotal() > 0);
+        assertTrue(result.getSource().size() > 0);
+        assertTrue((result.getSource().get(0)).containsKey("id"));
+        assertTrue(result.getSource().get(0).containsKey("amount"));
+        assertFalse(result.getSource().get(0).containsKey("price"));
+        SearchResponse searchResponse1 = utils.search(indexName, (String )null, 100,
+                ElasticSearchQueryUtils.QUERY_FORM_NULL, null, null, new String[]{"amount"});
+        assertNotNull(searchResponse1);
+        assertTrue(RestStatus.OK == searchResponse1.status());
+        ElasticSearchQueryUtils.Result result1 = ElasticSearchQueryUtils.result(searchResponse1);
+        assertNull(result1.getScrollId());
+        assertTrue(result1.getTotal() > 0);
+        assertTrue(result1.getSource().size() > 0);
+        assertTrue(result1.getSource().get(0).containsKey("id"));
+        assertFalse(result1.getSource().get(0).containsKey("amount"));
+        assertTrue(result1.getSource().get(0).containsKey("price"));
+        System.out.println(result1);
+    }
+
+    @Test
     void testSearchByMap() {
         Map<String, Object> search = new HashMap<String, Object>(){{
             put("id", "1");
         }};
-        SearchResponse searchResponse = utils.search(search, 1,
+        SearchResponse searchResponse = utils.search(indexName, search, 1,
                 ElasticSearchQueryUtils.QUERY_FORM_NULL, null, null, null);
         assertNotNull(searchResponse);
         assertTrue(RestStatus.OK == searchResponse.status());
@@ -88,5 +118,24 @@ class ElasticSearchQueryUtilsTest {
                 put("id", 1);
             }});
         }};
+        SearchResponse searchResponse = utils.search(indexName, search, 1, 0, null, null, null);
+        assertNotNull(searchResponse);
+        assertTrue(RestStatus.OK == searchResponse.status());
+        ElasticSearchQueryUtils.Result result = ElasticSearchQueryUtils.result(searchResponse);
+        assertNull(result.getScrollId());
+        assertTrue(result.getTotal() > 0);
+        assertTrue(result.getSource().size() > 0);
+    }
+
+    @Test
+    void testSearchByJsonString() {
+        String search = "{'id': 1}";
+        SearchResponse searchResponse = utils.search(indexName, search, 1, 0, null, null, null);
+        assertNotNull(searchResponse);
+        assertTrue(RestStatus.OK == searchResponse.status());
+        ElasticSearchQueryUtils.Result result = ElasticSearchQueryUtils.result(searchResponse);
+        assertNull(result.getScrollId());
+        assertTrue(result.getTotal() > 0);
+        assertTrue(result.getSource().size() > 0);
     }
 }

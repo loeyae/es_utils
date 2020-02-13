@@ -122,6 +122,7 @@ public class ElasticSearchQueryUtils {
     /**
      * search
      *
+     * @param index
      * @param jsonString
      * @param size
      * @param from
@@ -130,9 +131,10 @@ public class ElasticSearchQueryUtils {
      * @param excludeFields
      * @return
      */
-    public SearchResponse search(String jsonString, int size, int from, Map<String, Integer>sort,
-                                 String[] includeFields, String[] excludeFields) {
-        SearchRequest searchRequest = buildRequest(jsonString, size, from,
+    public SearchResponse search(String index, String jsonString, int size, int from,
+                                 Map<String, Integer>sort, String[] includeFields,
+                                 String[] excludeFields) {
+        SearchRequest searchRequest = buildRequest(index, jsonString, size, from,
                 QUERY_TIME_VALUE_SECONDS_NULL, sort, includeFields, excludeFields);
         return query(searchRequest);
     }
@@ -140,6 +142,7 @@ public class ElasticSearchQueryUtils {
     /**
      * search
      *
+     * @param index
      * @param query
      * @param size
      * @param from
@@ -148,9 +151,10 @@ public class ElasticSearchQueryUtils {
      * @param excludeFields
      * @return
      */
-    public SearchResponse search(List<Map<String, Object>> query, int size, int from, Map<String,
-            Integer>sort, String[] includeFields, String[] excludeFields) {
-        SearchRequest searchRequest = buildRequest(query, size, from,
+    public SearchResponse search(String index, List<Map<String, Object>> query, int size, int from,
+                                 Map<String, Integer>sort, String[] includeFields,
+                                 String[] excludeFields) {
+        SearchRequest searchRequest = buildRequest(index, query, size, from,
                 QUERY_TIME_VALUE_SECONDS_NULL, sort, includeFields, excludeFields);
         return query(searchRequest);
     }
@@ -158,6 +162,7 @@ public class ElasticSearchQueryUtils {
     /**
      * search
      *
+     * @param index
      * @param search
      * @param size
      * @param from
@@ -166,9 +171,10 @@ public class ElasticSearchQueryUtils {
      * @param excludeFields
      * @return
      */
-    public SearchResponse search(Map<String, Object>search, int size, int from, Map<String,
-            Integer>sort, String[] includeFields, String[] excludeFields) {
-        SearchRequest searchRequest = buildRequest(search, size, from,
+    public SearchResponse search(String index, Map<String, Object>search, int size, int from,
+                                 Map<String, Integer>sort, String[] includeFields,
+                                 String[] excludeFields) {
+        SearchRequest searchRequest = buildRequest(index, search, size, from,
                 QUERY_TIME_VALUE_SECONDS_NULL, sort, includeFields, excludeFields);
         return query(searchRequest);
     }
@@ -176,6 +182,7 @@ public class ElasticSearchQueryUtils {
     /**
      * search
      *
+     * @param index
      * @param jsonString
      * @param size
      * @param timeValueSeconds
@@ -184,9 +191,10 @@ public class ElasticSearchQueryUtils {
      * @param excludeFields
      * @return
      */
-    public SearchResponse search(String jsonString, int size, long timeValueSeconds, Map<String,
-            Integer>sort, String[] includeFields, String[] excludeFields) {
-        SearchRequest searchRequest = buildRequest(jsonString, size, QUERY_FORM_NULL,
+    public SearchResponse search(String index, String jsonString, int size, long timeValueSeconds,
+                                 Map<String, Integer>sort, String[] includeFields,
+                                 String[] excludeFields) {
+        SearchRequest searchRequest = buildRequest(index, jsonString, size, QUERY_FORM_NULL,
                 timeValueSeconds, sort, includeFields, excludeFields);
         return query(searchRequest);
     }
@@ -194,6 +202,7 @@ public class ElasticSearchQueryUtils {
     /**
      * search
      *
+     * @param index
      * @param query
      * @param size
      * @param timeValueSeconds
@@ -202,16 +211,18 @@ public class ElasticSearchQueryUtils {
      * @param excludeFields
      * @return
      */
-    public SearchResponse search(List<Map<String, Object>> query, int size, long timeValueSeconds
-            , Map<String, Integer>sort, String[] includeFields, String[] excludeFields) {
-        SearchRequest searchRequest = buildRequest(query, size, QUERY_FORM_NULL, timeValueSeconds
-                , sort, includeFields, excludeFields);
+    public SearchResponse search(String index, List<Map<String, Object>> query, int size,
+                                 long timeValueSeconds, Map<String, Integer>sort,
+                                 String[] includeFields, String[] excludeFields) {
+        SearchRequest searchRequest = buildRequest(index, query, size, QUERY_FORM_NULL,
+                timeValueSeconds, sort, includeFields, excludeFields);
         return query(searchRequest);
     }
 
     /**
      * search
      *
+     * @param index
      * @param search
      * @param size
      * @param timeValueSeconds
@@ -220,9 +231,10 @@ public class ElasticSearchQueryUtils {
      * @param excludeFields
      * @return
      */
-    public SearchResponse search(Map<String, Object>search, int size, long timeValueSeconds,
-                                 Map<String, Integer>sort, String[] includeFields, String[] excludeFields) {
-        SearchRequest searchRequest = buildRequest(search, size, QUERY_FORM_NULL,
+    public SearchResponse search(String index, Map<String, Object>search, int size,
+                                 long timeValueSeconds, Map<String, Integer>sort,
+                                 String[] includeFields, String[] excludeFields) {
+        SearchRequest searchRequest = buildRequest(index, search, size, QUERY_FORM_NULL,
                 timeValueSeconds, sort, includeFields, excludeFields);
         return query(searchRequest);
     }
@@ -277,6 +289,7 @@ public class ElasticSearchQueryUtils {
     /**
      * 构建SearchRequest
      *
+     * @param index
      * @param query
      * @param size
      * @param from
@@ -286,17 +299,19 @@ public class ElasticSearchQueryUtils {
      * @param excludeFields
      * @return
      */
-    protected SearchRequest buildRequest(Map<String, Object> query, int size, int from,
+    protected SearchRequest buildRequest(String index, Map<String, Object> query, int size,
+                                         int from,
                                          long timeValueSeconds, Map<String, Integer> sort,
                                          String[] includeFields, String[] excludeFields) {
         QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(query);
-        return buildRequest(queryBuilder, size, from, timeValueSeconds, sort, includeFields,
+        return buildRequest(index, queryBuilder, size, from, timeValueSeconds, sort, includeFields,
                 excludeFields);
     }
 
     /**
      * 构建SearchRequest
      *
+     * @param index
      * @param query
      * @param size
      * @param from
@@ -306,36 +321,19 @@ public class ElasticSearchQueryUtils {
      * @param excludeFields
      * @return
      */
-    protected SearchRequest buildRequest(List<Map<String, Object>> query, int size, int from,
+    protected SearchRequest buildRequest(String index, List<Map<String, Object>> query, int size,
+                                         int from,
                                          long timeValueSeconds, Map<String, Integer> sort,
                                          String[] includeFields, String[] excludeFields) {
         QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(query);
-        return buildRequest(queryBuilder, size, from, timeValueSeconds, sort, includeFields,
-                excludeFields);
-    }
-
-    /**
-     * 构建SearchRequest
-     * @param query
-     * @param size
-     * @param from
-     * @param timeValueSeconds
-     * @param sort
-     * @param includeFields
-     * @param excludeFields
-     * @return
-     */
-    protected SearchRequest buildRequest(String query, int size, int from,
-                                         long timeValueSeconds, Map<String, Integer> sort,
-                                         String[] includeFields, String[] excludeFields) {
-        QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(query);
-        return buildRequest(queryBuilder, size, from, timeValueSeconds, sort, includeFields,
+        return buildRequest(index, queryBuilder, size, from, timeValueSeconds, sort, includeFields,
                 excludeFields);
     }
 
     /**
      * 构建SearchRequest
      *
+     * @param index
      * @param query
      * @param size
      * @param from
@@ -345,10 +343,32 @@ public class ElasticSearchQueryUtils {
      * @param excludeFields
      * @return
      */
-    protected SearchRequest buildRequest(QueryBuilder query, int size, int from,
+    protected SearchRequest buildRequest(String index, String query, int size, int from,
+                                         long timeValueSeconds, Map<String, Integer> sort,
+                                         String[] includeFields, String[] excludeFields) {
+        QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(query);
+        return buildRequest(index, queryBuilder, size, from, timeValueSeconds, sort, includeFields,
+                excludeFields);
+    }
+
+    /**
+     * 构建SearchRequest
+     *
+     * @param index
+     * @param query
+     * @param size
+     * @param from
+     * @param timeValueSeconds
+     * @param sort
+     * @param includeFields
+     * @param excludeFields
+     * @return
+     */
+    protected SearchRequest buildRequest(String index, QueryBuilder query, int size, int from,
                                          long timeValueSeconds, Map<String, Integer> sort,
                                          String[] includeFields, String[] excludeFields) {
         SearchRequest searchRequest = new SearchRequest();
+        searchRequest.indices(index);
         SearchSourceBuilder searchSource = new SearchSourceBuilder();
         searchSource.query(query);
         searchSource.size(size);
