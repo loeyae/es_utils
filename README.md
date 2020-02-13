@@ -1,5 +1,5 @@
 # es_utils
-基于ElasticSearch Java High Level Rest Client的工具包，使用springboot项目。
+基于ElasticSearch Java High Level Rest Client的简易封装，适用springboot项目。
 
 ## es配置
 ```$yaml
