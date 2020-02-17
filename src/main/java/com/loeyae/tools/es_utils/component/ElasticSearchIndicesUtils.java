@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -76,7 +77,7 @@ public class ElasticSearchIndicesUtils {
      * @param fields
      * @return
      */
-    public boolean createIndex(String name, String type, Map<String, String> fields) {
+    public boolean createIndex(String name, String type, Map<String, Object> fields) {
         CreateIndexRequest createIndexRequest = buildCreateIndexRequest(name);
         buildIndexSetting(createIndexRequest, null);
         buildIndexMapping(createIndexRequest, type, fields);
@@ -94,7 +95,7 @@ public class ElasticSearchIndicesUtils {
      * @param fields
      * @return
      */
-    public boolean createIndex(String name, Integer[] settings, String type, Map fields) {
+    public boolean createIndex(String name, Integer[] settings, String type, Map<String, Object> fields) {
         CreateIndexRequest createIndexRequest = buildCreateIndexRequest(name);
         buildIndexSetting(createIndexRequest, settings);
         buildIndexMapping(createIndexRequest, type, fields);
@@ -217,7 +218,7 @@ public class ElasticSearchIndicesUtils {
      * @param fields
      */
     protected void buildIndexMapping(CreateIndexRequest createIndexRequest, String type, Map<String,
-            String> fields) {
+            Object> fields) {
         XContentBuilder builder = null;
         try {
             builder = XContentFactory.jsonBuilder();
@@ -247,12 +248,28 @@ public class ElasticSearchIndicesUtils {
      * @param fields
      */
     protected void buildIndexFields(XContentBuilder builder,
-                                    Map<String, String> fields) {
+                                    Map<String, Object> fields) {
         fields.forEach((key, value) -> {
             try {
                 builder.startObject(key);
                 {
-                    builder.field("type", value);
+                    if (value instanceof Map) {
+                        ((Map) value).forEach((k, v)->{
+                            if (v instanceof Map) {
+                                buildIndexFields(builder, new HashMap<String, Object>(){{
+                                    put(String.valueOf(k), v);
+                                }});
+                            } else {
+                                try {
+                                    builder.field(String.valueOf(k), v);
+                                } catch (Exception e) {
+                                    log.error(DEFAULT_ERROR_MSG, e);
+                                }
+                            }
+                        });
+                    } else {
+                        builder.field("type", value);
+                    }
                 }
                 builder.endObject();
             } catch (IOException e) {

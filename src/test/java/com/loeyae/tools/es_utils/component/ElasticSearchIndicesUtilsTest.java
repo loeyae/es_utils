@@ -58,7 +58,7 @@ class ElasticSearchIndicesUtilsTest {
         if (utils.indexExists(indexName)) {
             utils.deleteIndex(indexName);
         }
-        Map<String, String> fields = new HashMap<>();
+        Map<String, Object> fields = new HashMap<>();
         fields.put("id", "long");
         fields.put("message", "text");
         fields.put("created", "date");
@@ -72,9 +72,26 @@ class ElasticSearchIndicesUtilsTest {
         if (utils.indexExists(indexName)) {
             utils.deleteIndex(indexName);
         }
-        Map<String, String> fields = new HashMap<>();
+        Map<String, Object> fields = new HashMap<>();
         fields.put("id", "long");
         fields.put("message", "text");
+        fields.put("created", "date");
+        boolean restStatus = utils.createIndex(indexName, new Integer[]{10, 1}, "_doc", fields);
+        assertTrue(restStatus);
+    }
+
+    @Test
+    void testCreateIndexByMultiSetting() {
+
+        if (utils.indexExists(indexName)) {
+            utils.deleteIndex(indexName);
+        }
+        Map<String, Object> fields = new HashMap<>();
+        fields.put("id", "long");
+        fields.put("message", new HashMap<String, String>(){{
+            put("type", "text");
+            put("analyzer", "chinese");
+        }});
         fields.put("created", "date");
         boolean restStatus = utils.createIndex(indexName, new Integer[]{10, 1}, "_doc", fields);
         assertTrue(restStatus);
