@@ -2,6 +2,10 @@ package com.loeyae.tools.es_utils.component;
 
 import com.loeyae.tools.es_utils.common.ElasticSearchQueryFactory;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -184,7 +188,10 @@ class ElasticSearchQueryUtilsTest {
                 add(null);
                 add(10);
             }});
-            put(ElasticSearchQueryFactory.QUERY_TYPE_QUERY_STRING, "测试");
+            put(ElasticSearchQueryFactory.QUERY_TYPE_QUERY_STRING,
+                    new HashMap<String, Object>(){{
+                        put("message", "测试");
+                    }});
         }};
         SearchResponse searchResponse = utils.search(indexName, search, 100, 0,
                 new HashMap<String, Integer>(){{
@@ -193,11 +200,24 @@ class ElasticSearchQueryUtilsTest {
         ElasticSearchQueryUtils.Result result = ElasticSearchQueryUtils.result(searchResponse);
         assertTrue(result.getTotal() > 0);
         assertTrue(result.getCount() > 0);
+        System.out.print(result);
     }
 
     @Test
     void testSearchByQueryBuilder() {
-        
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+        boolQueryBuilder.must(new RangeQueryBuilder("id"){{
+            to(10);
+        }});
+        boolQueryBuilder.must(new QueryStringQueryBuilder("测试").field("message"));
+        SearchResponse searchResponse = utils.search(indexName, boolQueryBuilder, 100, 0,
+                new HashMap<String, Integer>(){{
+                    put("id", 1);
+                }}, null, null);
+        ElasticSearchQueryUtils.Result result = ElasticSearchQueryUtils.result(searchResponse);
+        assertTrue(result.getTotal() > 0);
+        assertTrue(result.getCount() > 0);
+        System.out.print(result);
     }
 
 }

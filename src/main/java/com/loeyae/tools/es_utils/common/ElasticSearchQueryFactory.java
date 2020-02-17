@@ -1,6 +1,7 @@
 package com.loeyae.tools.es_utils.common;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -62,8 +63,7 @@ public class ElasticSearchQueryFactory {
      * 一元关键词
      */
     public static final String[] UNARY_QUERY_TYPES = new String[]{
-            QUERY_TYPE_EXISTS, QUERY_TYPE_IDS, QUERY_TYPE_QUERY_STRING,
-            QUERY_TYPE_SIMPLE_QUERY_STRING, QUERY_TYPE_TYPE
+            QUERY_TYPE_EXISTS, QUERY_TYPE_IDS, QUERY_TYPE_TYPE
     };
 
     /**
@@ -72,7 +72,8 @@ public class ElasticSearchQueryFactory {
     public static final String[] TWO_UNARY_QUERY_TYPES = new String[]{
             QUERY_TYPE_COMMON_TERMS, QUERY_TYPE_FUZZY, QUERY_TYPE_MATCH, QUERY_TYPE_MATCH_PHRASE,
             QUERY_TYPE_MATCH_PHRASE_PREFIX, QUERY_TYPE_PREFIX, QUERY_TYPE_REGEXP, QUERY_TYPE_TERM
-            , QUERY_TYPE_TERMS, QUERY_TYPE_WILDCARD
+            , QUERY_TYPE_TERMS, QUERY_TYPE_WILDCARD, QUERY_TYPE_QUERY_STRING,
+            QUERY_TYPE_SIMPLE_QUERY_STRING
     };
 
     /**
@@ -170,6 +171,13 @@ public class ElasticSearchQueryFactory {
             Map.Entry<String, Object> entry = params.entrySet().iterator().next();
             field = entry.getKey();
             query = entry.getValue();
+        }
+        assert StringUtils.isNotEmpty(field);
+        if (key == QUERY_TYPE_QUERY_STRING) {
+            return QueryBuilders.queryStringQuery(query.toString()).field(field);
+        }
+        if (key == QUERY_TYPE_SIMPLE_QUERY_STRING) {
+            return QueryBuilders.simpleQueryStringQuery(query.toString()).field(field);
         }
         try {
             Class<?> builder = Class.forName(QueryBuilders.class.getName());
