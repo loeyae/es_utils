@@ -1,6 +1,5 @@
 package com.loeyae.tools.es_utils.component;
 
-import com.loeyae.tools.es_utils.common.ElasticSearchQueryBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.rest.RestStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -22,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 class ElasticSearchQueryUtilsTest {
 
-    private static final String indexName = "zy-test";
+    private static final String indexName = "zy-sample";
 
     @Autowired
     ElasticSearchQueryUtils utils;
@@ -37,7 +36,7 @@ class ElasticSearchQueryUtilsTest {
 
     @Test
     void testSearchByNull() {
-        SearchResponse searchResponse = utils.search(indexName, (String )null, 100,
+        SearchResponse searchResponse = utils.search(indexName, (String )null, 2,
                 ElasticSearchQueryUtils.QUERY_FORM_NULL, null, null, null);
         assertNotNull(searchResponse);
         assertTrue(RestStatus.OK == searchResponse.status());
@@ -45,7 +44,7 @@ class ElasticSearchQueryUtilsTest {
         assertNull(result.getScrollId());
         assertTrue(result.getTotal() > 0);
         assertTrue(result.getSource().size() > 0);
-        SearchResponse searchResponse1 = utils.search(indexName, (String)null, 100, 0,
+        SearchResponse searchResponse1 = utils.search(indexName, (String)null, 2, 0,
                 new HashMap<String, Integer>(){{
                     put("id", 1);
         }}, null, null);
@@ -55,8 +54,8 @@ class ElasticSearchQueryUtilsTest {
         assertNull(result1.getScrollId());
         assertTrue(result1.getTotal() > 0);
         assertTrue(result1.getSource().size() > 0);
-        assertTrue(result.toString().equals(result1.toString()));
-        SearchResponse searchResponse2 = utils.search(indexName, (String)null, 100, 0,
+        assertFalse(result.toString().equals(result1.toString()));
+        SearchResponse searchResponse2 = utils.search(indexName, (String)null, 2, 0,
                 new HashMap<String, Integer>(){{
             put("id", -1);
         }}, null, null);
@@ -71,7 +70,7 @@ class ElasticSearchQueryUtilsTest {
 
     @Test
     void  testSearchByNullWithFields() {
-        SearchResponse searchResponse = utils.search(indexName, (String )null, 100,
+        SearchResponse searchResponse = utils.search(indexName, (String )null, 1,
                 ElasticSearchQueryUtils.QUERY_FORM_NULL, null, new String[]{"id", "amount"}, null);
         assertNotNull(searchResponse);
         assertTrue(RestStatus.OK == searchResponse.status());
@@ -82,7 +81,7 @@ class ElasticSearchQueryUtilsTest {
         assertTrue((result.getSource().get(0)).containsKey("id"));
         assertTrue(result.getSource().get(0).containsKey("amount"));
         assertFalse(result.getSource().get(0).containsKey("price"));
-        SearchResponse searchResponse1 = utils.search(indexName, (String )null, 100,
+        SearchResponse searchResponse1 = utils.search(indexName, (String )null, 1,
                 ElasticSearchQueryUtils.QUERY_FORM_NULL, null, null, new String[]{"amount"});
         assertNotNull(searchResponse1);
         assertTrue(RestStatus.OK == searchResponse1.status());
@@ -93,7 +92,6 @@ class ElasticSearchQueryUtilsTest {
         assertTrue(result1.getSource().get(0).containsKey("id"));
         assertFalse(result1.getSource().get(0).containsKey("amount"));
         assertTrue(result1.getSource().get(0).containsKey("price"));
-        System.out.println(result1);
     }
 
     @Test
@@ -137,5 +135,32 @@ class ElasticSearchQueryUtilsTest {
         assertNull(result.getScrollId());
         assertTrue(result.getTotal() > 0);
         assertTrue(result.getSource().size() > 0);
+    }
+
+    @Test
+    void testScrollByNull() {
+        SearchResponse searchResponse = utils.search(indexName, (String )null, 100, 60L,
+                new HashMap<String, Integer>(){{
+                    put("id", 1);
+                }},
+                null, null);
+        ElasticSearchQueryUtils.Result result = null;
+        Integer id = null;
+        result = ElasticSearchQueryUtils.result(searchResponse);
+        assertNotNull(result.getScrollId());
+        assertEquals(1000000, result.getTotal());
+        assertEquals(100, result.getCount());
+        id = Integer.valueOf(result.getSource().get(0).get("id").toString());
+        assertTrue(id > 0);
+        int i = 0;
+        while (null != result.getScrollId() && i < 3) {
+            result = ElasticSearchQueryUtils.result(utils.scroll(result.getScrollId(), 60L));
+            assertEquals(1000000, result.getTotal());
+            assertEquals(100, result.getCount());
+            Integer nid = Integer.valueOf(result.getSource().get(0).get("id").toString());
+            assertTrue(id != nid);
+            id = nid;
+            i++;
+        }
     }
 }

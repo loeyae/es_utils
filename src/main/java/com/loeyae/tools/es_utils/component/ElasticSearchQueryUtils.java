@@ -1,12 +1,10 @@
 package com.loeyae.tools.es_utils.component;
 
-import com.alibaba.fastjson.JSON;
+
 import com.alibaba.fastjson.JSONObject;
 import com.loeyae.tools.es_utils.common.ElasticSearchQueryBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.action.search.*;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
@@ -46,7 +44,7 @@ public class ElasticSearchQueryUtils {
     /**
      * searchResponse 解析
      */
-    static public class Result {
+    static class Result {
 
         private SearchResponse searchResponse;
 
@@ -54,12 +52,15 @@ public class ElasticSearchQueryUtils {
 
         private long total;
 
+        private long count;
+
         private List<Map<String, Object>> source;
 
         public void init(SearchResponse searchResponse) {
             this.searchResponse = searchResponse;
             scrollId = searchResponse.getScrollId();
             total = searchResponse.getHits().getTotalHits();
+            count = searchResponse.getHits().getHits().length;
             source = parseSource();
         }
 
@@ -86,6 +87,10 @@ public class ElasticSearchQueryUtils {
 
         public long getTotal() {
             return total;
+        }
+
+        public long getCount() {
+            return count;
         }
 
         public List<Map<String, Object>> getSource() {
@@ -250,6 +255,23 @@ public class ElasticSearchQueryUtils {
         SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
         scrollRequest.scroll(TimeValue.timeValueSeconds(timeValueSeconds));
         return query(scrollRequest);
+    }
+
+    /**
+     * clear scroll request
+     *
+     * @param scrollId
+     * @return
+     */
+    public ClearScrollResponse clearScroll(String... scrollId) {
+        ClearScrollRequest scrollRequest = new ClearScrollRequest();
+        scrollRequest.setScrollIds(Arrays.asList(scrollId));
+        try {
+            return restHighLevelClient.clearScroll(scrollRequest, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            log.error(DEFAULT_ERROR_MSG, e);
+        }
+        return null;
     }
 
     /**
