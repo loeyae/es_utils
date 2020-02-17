@@ -403,7 +403,7 @@ public class ElasticSearchQueryUtils {
             if (c.getValue() > 0) {
                 fieldSortBuilder.order(SortOrder.ASC);
             } else {
-                fieldSortBuilder.order(SortOrder.DESC);
+                fieldSortBuilder.order(DEFAULT_SORT_TYPE);
             }
             searchSource.sort(fieldSortBuilder);
         }
