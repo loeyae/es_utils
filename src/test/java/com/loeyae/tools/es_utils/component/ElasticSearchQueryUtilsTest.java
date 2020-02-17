@@ -1,5 +1,6 @@
 package com.loeyae.tools.es_utils.component;
 
+import com.loeyae.tools.es_utils.common.ElasticSearchQueryFactory;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.rest.RestStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -152,8 +153,10 @@ class ElasticSearchQueryUtilsTest {
         assertEquals(100, result.getCount());
         id = Integer.valueOf(result.getSource().get(0).get("id").toString());
         assertTrue(id > 0);
+        List<String> scrollIds = new ArrayList<>();
         int i = 0;
         while (null != result.getScrollId() && i < 3) {
+            scrollIds.add(result.getScrollId());
             result = ElasticSearchQueryUtils.result(utils.scroll(result.getScrollId(), 60L));
             assertEquals(1000000, result.getTotal());
             assertEquals(100, result.getCount());
@@ -162,5 +165,39 @@ class ElasticSearchQueryUtilsTest {
             id = nid;
             i++;
         }
+        if (null != result.getScrollId()) {
+            scrollIds.add(result.getScrollId());
+        }
+        String[] scrollIdArray = new String[scrollIds.size()];
+        int j = 0;
+        for (String item : scrollIds) {
+            scrollIdArray[j] = item;
+            j++;
+        }
+        utils.clearScroll(scrollIdArray);
     }
+
+    @Test
+    void testSearchByMultiParams() {
+        Map<String, Object> search = new HashMap<String, Object>(){{
+            put("id", new ArrayList<Integer>(){{
+                add(null);
+                add(10);
+            }});
+            put(ElasticSearchQueryFactory.QUERY_TYPE_QUERY_STRING, "测试");
+        }};
+        SearchResponse searchResponse = utils.search(indexName, search, 100, 0,
+                new HashMap<String, Integer>(){{
+                    put("id", 1);
+                }}, null, null);
+        ElasticSearchQueryUtils.Result result = ElasticSearchQueryUtils.result(searchResponse);
+        assertTrue(result.getTotal() > 0);
+        assertTrue(result.getCount() > 0);
+    }
+
+    @Test
+    void testSearchByQueryBuilder() {
+        
+    }
+
 }

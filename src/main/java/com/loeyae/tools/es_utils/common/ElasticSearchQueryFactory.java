@@ -6,11 +6,9 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -163,10 +161,17 @@ public class ElasticSearchQueryFactory {
      * @return
      */
     static public QueryBuilder buildTwoUnaryQueryBuilder(String key, Map<String, Object> params) {
-        assert params.containsKey(QUERY_PARAMS_FIELD);
-        assert params.containsKey(QUERY_PARAMS_QUERY);
+        String field = null;
+        Object query = null;
+        if (params.containsKey(QUERY_PARAMS_FIELD)) {
+            field = params.get(QUERY_PARAMS_FIELD).toString();
+            query = params.get(QUERY_PARAMS_QUERY);
+        } else {
+            Map.Entry<String, Object> entry = params.entrySet().iterator().next();
+            field = entry.getKey();
+            query = entry.getValue();
+        }
         try {
-            Object query = params.get(QUERY_PARAMS_QUERY);
             Class<?> builder = Class.forName(QueryBuilders.class.getName());
             Method method = null;
             if (query instanceof Arrays || query instanceof Object[]) {
@@ -177,8 +182,7 @@ public class ElasticSearchQueryFactory {
             } else {
                 method = builder.getMethod(keyToMethodName(key), String.class, Object.class);
             }
-            return (QueryBuilder) method.invoke(null, params.get(QUERY_PARAMS_FIELD),
-                    params.get(QUERY_PARAMS_QUERY));
+            return (QueryBuilder) method.invoke(null, field, query);
         } catch (ClassNotFoundException e) {
             log.error(DEFAULT_ERROR, e);
         } catch (NoSuchMethodException e) {
