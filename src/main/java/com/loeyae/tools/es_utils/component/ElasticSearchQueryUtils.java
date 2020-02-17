@@ -106,6 +106,7 @@ public class ElasticSearchQueryUtils {
             Map<String, Object> jsonMap = new HashMap<String, Object>(){{
                 put("scrollId", scrollId);
                 put("total", total);
+                put("count", count);
                 put("source", source);
             }};
             return JSONObject.toJSONString(jsonMap);
