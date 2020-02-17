@@ -1,6 +1,7 @@
 package com.loeyae.tools.es_utils.component;
 
 import com.loeyae.tools.es_utils.common.ElasticSearchQueryFactory;
+import org.elasticsearch.action.search.ClearScrollResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -178,7 +179,9 @@ class ElasticSearchQueryUtilsTest {
             scrollIdArray[j] = item;
             j++;
         }
-        utils.clearScroll(scrollIdArray);
+        ClearScrollResponse clearScrollResponse = utils.clearScroll(scrollIdArray);
+        assertNotNull(clearScrollResponse);
+        assertTrue(RestStatus.OK == clearScrollResponse.status());
     }
 
     @Test
@@ -200,7 +203,7 @@ class ElasticSearchQueryUtilsTest {
         ElasticSearchQueryUtils.Result result = ElasticSearchQueryUtils.result(searchResponse);
         assertTrue(result.getTotal() > 0);
         assertTrue(result.getCount() > 0);
-        System.out.print(result);
+        assertTrue(result.getCount() == result.getSource().size());
     }
 
     @Test
@@ -217,7 +220,8 @@ class ElasticSearchQueryUtilsTest {
         ElasticSearchQueryUtils.Result result = ElasticSearchQueryUtils.result(searchResponse);
         assertTrue(result.getTotal() > 0);
         assertTrue(result.getCount() > 0);
-        System.out.print(result);
+        assertTrue(result.getSource().size() > 0);
+        assertTrue(result.getCount() == result.getSource().size());
     }
 
 }
