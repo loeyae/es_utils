@@ -37,6 +37,8 @@ public class ElasticSearchIndicesUtils {
     private static final int INDEX_DEFAULT_SHARDS = 5;
     private static final int INDEX_DEFAULT_REPLICAS = 1;
 
+    public static final String DEFAULT_INDEX_TYPE = "_doc";
+
     @Autowired
     RestHighLevelClient restHighLevelClient;
 
@@ -90,6 +92,22 @@ public class ElasticSearchIndicesUtils {
      * 创建索引
      *
      * @param name
+     * @param fields
+     * @return
+     */
+    public boolean createIndex(String name, Map<String, Object> fields) {
+        CreateIndexRequest createIndexRequest = buildCreateIndexRequest(name);
+        buildIndexSetting(createIndexRequest, null);
+        buildIndexMapping(createIndexRequest, DEFAULT_INDEX_TYPE, fields);
+        CreateIndexResponse createIndexResponse = doCreateIndex(createIndexRequest);
+        boolean restStatus = filterCreateIndexResponse(createIndexResponse);
+        return restStatus;
+    }
+
+    /**
+     * 创建索引
+     *
+     * @param name
      * @param settings
      * @param type
      * @param fields
@@ -99,6 +117,23 @@ public class ElasticSearchIndicesUtils {
         CreateIndexRequest createIndexRequest = buildCreateIndexRequest(name);
         buildIndexSetting(createIndexRequest, settings);
         buildIndexMapping(createIndexRequest, type, fields);
+        CreateIndexResponse createIndexResponse = doCreateIndex(createIndexRequest);
+        boolean restStatus = filterCreateIndexResponse(createIndexResponse);
+        return restStatus;
+    }
+
+    /**
+     * 创建索引
+     *
+     * @param name
+     * @param settings
+     * @param fields
+     * @return
+     */
+    public boolean createIndex(String name, Integer[] settings, Map<String, Object> fields) {
+        CreateIndexRequest createIndexRequest = buildCreateIndexRequest(name);
+        buildIndexSetting(createIndexRequest, settings);
+        buildIndexMapping(createIndexRequest, DEFAULT_INDEX_TYPE, fields);
         CreateIndexResponse createIndexResponse = doCreateIndex(createIndexRequest);
         boolean restStatus = filterCreateIndexResponse(createIndexResponse);
         return restStatus;
