@@ -54,20 +54,19 @@ public class ElasticSearchDocumentUtils {
      * @param source
      * @return
      */
-    public boolean insert(String index, String type, Map<String, Object> source) {
-        System.out.print(restHighLevelClient);
+    public String insert(String index, String type, Map<String, Object> source) {
         IndexRequest indexRequest = new IndexRequest(index, type);
         indexRequest.source(source);
         try {
             IndexResponse indexResponse = restHighLevelClient.index(indexRequest,
                     RequestOptions.DEFAULT);
             if (RestStatus.CREATED == indexResponse.status()) {
-                return true;
+                return indexResponse.getId();
             }
         } catch (IOException e) {
             log.error(DEFAULT_ERROR_MSG, e);
         }
-        return false;
+        return null;
     }
 
     /**
@@ -77,20 +76,19 @@ public class ElasticSearchDocumentUtils {
      * @param source
      * @return
      */
-    public boolean insert(String index, Map<String, Object> source) {
-        System.out.print(restHighLevelClient);
+    public String insert(String index, Map<String, Object> source) {
         IndexRequest indexRequest = new IndexRequest(index, ElasticSearchIndicesUtils.DEFAULT_INDEX_TYPE);
         indexRequest.source(source);
         try {
             IndexResponse indexResponse = restHighLevelClient.index(indexRequest,
                     RequestOptions.DEFAULT);
             if (RestStatus.CREATED == indexResponse.status()) {
-                return true;
+                return indexResponse.getId();
             }
         } catch (IOException e) {
             log.error(DEFAULT_ERROR_MSG, e);
         }
-        return false;
+        return null;
     }
 
     /**
@@ -102,19 +100,19 @@ public class ElasticSearchDocumentUtils {
      * @return
      * @para id
      */
-    public boolean insert(String index, String type, String id, Map<String, Object> source) {
+    public String insert(String index, String type, String id, Map<String, Object> source) {
         IndexRequest indexRequest = new IndexRequest(index, type, id);
         indexRequest.source(source);
         try {
             IndexResponse indexResponse = restHighLevelClient.index(indexRequest,
                     RequestOptions.DEFAULT);
             if (RestStatus.CREATED == indexResponse.status()) {
-                return true;
+                return indexResponse.getId();
             }
         } catch (IOException e) {
             log.error(DEFAULT_ERROR_MSG, e);
         }
-        return false;
+        return null;
     }
 
     /**
@@ -298,17 +296,17 @@ public class ElasticSearchDocumentUtils {
      * @param sources
      * @return
      */
-    public boolean[] bulkInsert(String index, List<Map<String, Object>> sources) {
+    public String[] bulkInsert(String index, List<Map<String, Object>> sources) {
         BulkRequest bulkRequest = new BulkRequest();
         sources.forEach(item -> {
             bulkRequest.add(new IndexRequest(index, ElasticSearchIndicesUtils.DEFAULT_INDEX_TYPE).source(item));
         });
         try {
             BulkResponse bulkResponse = restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
-            boolean[] restStatus = new boolean[sources.size()];
+            String[] restStatus = new String[sources.size()];
             int i = 0;
             for (BulkItemResponse item : bulkResponse) {
-                restStatus[i] = (RestStatus.CREATED == item.status() ? true : false);
+                restStatus[i] = (RestStatus.CREATED == item.status() ? item.getId() : null);
                 i++;
             }
             return restStatus;
@@ -326,17 +324,17 @@ public class ElasticSearchDocumentUtils {
      * @param sources
      * @return
      */
-    public boolean[] bulkInsert(String index, String type, List<Map<String, Object>> sources) {
+    public String[] bulkInsert(String index, String type, List<Map<String, Object>> sources) {
         BulkRequest bulkRequest = new BulkRequest();
         sources.forEach(item -> {
             bulkRequest.add(new IndexRequest(index, type).source(item));
         });
         try {
             BulkResponse bulkResponse = restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
-            boolean[] restStatus = new boolean[sources.size()];
+            String[] restStatus = new String[sources.size()];
             int i = 0;
             for (BulkItemResponse item : bulkResponse) {
-                restStatus[i] = (RestStatus.CREATED == item.status() ? true : false);
+                restStatus[i] = (RestStatus.CREATED == item.status() ? item.getId() : null);
                 i++;
             }
             return restStatus;
