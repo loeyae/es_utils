@@ -2,12 +2,17 @@ package com.loeyae.tools.es_utils.component;
 
 import com.loeyae.tools.es_utils.common.ElasticSearchQueryFactory;
 import org.elasticsearch.action.search.ClearScrollResponse;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.metrics.valuecount.ParsedValueCount;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -222,6 +227,55 @@ class ElasticSearchQueryUtilsTest {
         assertTrue(result.getCount() > 0);
         assertTrue(result.getSource().size() > 0);
         assertTrue(result.getCount() == result.getSource().size());
+    }
+
+    @Test
+    void testAggregations() {
+        AggregationBuilder aggregationBuilder =
+                AggregationBuilders.count("count").field("id");
+        SearchResponse searchResponse = utils.aggregations(indexName, aggregationBuilder);
+        ParsedValueCount count = searchResponse.getAggregations().get("count");
+        assertEquals(1000000, count.getValue());
+        SearchResponse searchResponse1 = utils.aggregations(indexName, aggregationBuilder,
+                new HashMap<String, Object>(){{
+                    put("id", new ArrayList<Integer>(){{
+                        add(500001);
+                    }});
+                }});
+        ParsedValueCount count1 = searchResponse1.getAggregations().get("count");
+        assertEquals(500000, count1.getValue());
+        SearchResponse searchResponse2 = utils.aggregations(indexName, aggregationBuilder,
+                new ArrayList<Map<String, Object>>(){{
+                    add(new HashMap<String, Object>(){{
+                        put("id", new ArrayList<Integer>(){{
+                            add(null);
+                            add(500000);
+                        }});
+                    }});
+                }});
+        ParsedValueCount count2 = searchResponse2.getAggregations().get("count");
+        assertEquals(500000, count2.getValue());
+        String jsonString = "{'id':[0, 500000]}";
+        SearchResponse searchResponse3 = utils.aggregations(indexName, aggregationBuilder,
+                jsonString);
+        ParsedValueCount count3 = searchResponse3.getAggregations().get("count");
+        assertEquals(500000, count3.getValue());
+    }
+
+    @Test
+    void testSearchBySearchRequestWithAggregations() {
+        SearchRequest searchRequest = new SearchRequest();
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.fetchSource(false);
+        sourceBuilder.size(0);
+        AggregationBuilder aggregationBuilder = AggregationBuilders.count("count").field("id");
+        sourceBuilder.aggregation(aggregationBuilder);
+        searchRequest.indices(indexName);
+        searchRequest.source(sourceBuilder);
+        SearchResponse searchResponse = utils.query(searchRequest);
+        ParsedValueCount count = searchResponse.getAggregations().get("count");
+        System.out.print(searchResponse);
+        assertEquals(1000000, count.getValue());
     }
 
 }
