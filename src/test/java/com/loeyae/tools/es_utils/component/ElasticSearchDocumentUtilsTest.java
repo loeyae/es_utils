@@ -41,10 +41,15 @@ class ElasticSearchDocumentUtilsTest {
         params.put("message", "message 1");
         params.put("created", System.currentTimeMillis());
         assertNotNull(utils);
-        boolean ret = utils.insert(indexName, docType, params);
-        assertTrue(ret);
-        boolean ret1 = utils.insert(indexName, docType, docId, params);
-        assertTrue(ret1);
+        String ret = utils.insert(indexName, docType, params);
+        assertTrue(null != ret);
+        boolean deleted = utils.delete(indexName, docType, ret);
+        assertTrue(deleted);
+        String ret1 = utils.insert(indexName, docType, docId, params);
+        assertTrue(null != ret1);
+        assertEquals(docId, ret1);
+        String ret2 = utils.insert(indexName, params);
+        assertTrue(null != ret2);
     }
 
     @Test
@@ -53,6 +58,10 @@ class ElasticSearchDocumentUtilsTest {
         assertNotNull(result);
         assertEquals("1", result.get("id"));
         assertEquals("message 1", result.get("message"));
+        Map<String, Object> result1 = utils.get(indexName, docId);
+        assertNotNull(result1);
+        assertEquals("1", result1.get("id"));
+        assertEquals("message 1", result1.get("message"));
     }
 
     @Test
@@ -61,6 +70,8 @@ class ElasticSearchDocumentUtilsTest {
         params.put("message", "message 2");
         boolean ret = utils.update(indexName, docType, docId, params);
         assertTrue(ret);
+        boolean ret0 = utils.update(indexName, docId, params);
+        assertTrue(ret0);
         Map<String, Object> params1 = new HashMap<>();
         params1.put("message", "message 10");
         Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, Script.DEFAULT_SCRIPT_LANG, "ctx" +
@@ -70,11 +81,14 @@ class ElasticSearchDocumentUtilsTest {
         Script script1 = new Script("ctx._source.message='message 12'");
         boolean ret2 = utils.update(indexName, docType, docId, script1);
         assertTrue(ret2);
+        Script script2 = new Script("ctx._source.message='message 13'");
+        boolean ret3 = utils.update(indexName, docId, script2);
+        assertTrue(ret3);
     }
 
     @Test
     void testDelete() {
-        boolean ret = utils.delete(indexName, docType, docId);
+        boolean ret = utils.delete(indexName, docId);
         assertTrue(ret);
     }
 
@@ -98,9 +112,12 @@ class ElasticSearchDocumentUtilsTest {
                 });
             }
         };
-        boolean[] retArray = utils.bulkInsert(indexName, docType, sources);
-        assertTrue(retArray[0]);
-        assertTrue(retArray[1]);
+        String[] retArray = utils.bulkInsert(indexName, docType, sources);
+        assertNotNull(retArray[0]);
+        assertNotNull(retArray[1]);
+        String[] retArray1 = utils.bulkInsert(indexName, sources);
+        assertNotNull(retArray1[0]);
+        assertNotNull(retArray1[1]);
     }
 
     @Test
@@ -116,7 +133,7 @@ class ElasticSearchDocumentUtilsTest {
         Map<String, Object> search = new HashMap<>();
         search.put("id", "101");
         long ret1 = utils.updateByQuery(indexName, docType, script1, search);
-        assertEquals(1, ret1);
+        assertTrue(ret1 > 0);
         Map<String, Object> settings = new HashMap<String, Object>(){{
             put("message", "message 112");
         }};
@@ -124,7 +141,15 @@ class ElasticSearchDocumentUtilsTest {
             put("id", "111");
         }};
         long ret2 = utils.updateByQuery(indexName, docType, settings, search1);
-        assertEquals(1, ret2);
+        assertTrue(ret2 > 0);
+        Map<String, Object> settings1 = new HashMap<String, Object>(){{
+            put("message", "message 113");
+        }};
+        long ret3 = utils.updateByQuery(indexName, settings, search1);
+        assertTrue(ret3 > 0);
+        Script script2 = new Script("ctx._source.message='message 114'");
+        long ret4 = utils.updateByQuery(indexName, script2, search1);
+        assertTrue(ret4 > 0);
     }
 
     @Test
@@ -153,10 +178,18 @@ class ElasticSearchDocumentUtilsTest {
 
         Map<String, Object> map = new HashMap<String, Object>(){{
             put("id", new ArrayList<Integer>(){{
-                add(0);
+                add(111);
             }});
         }};
         long ret = utils.deleteByQuery(indexName, docType, map);
         assertTrue(ret > 0);
+
+        Map<String, Object> map2 = new HashMap<String, Object>(){{
+            put("id", new ArrayList<Integer>(){{
+                add(0);
+            }});
+        }};
+        long ret1 = utils.deleteByQuery(indexName, map2);
+        assertTrue(ret1 > 0);
     }
 }
