@@ -9,6 +9,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -316,6 +317,87 @@ public class ElasticSearchQueryUtils {
     }
 
     /**
+     * 聚合
+     *
+     * @param indexName
+     * @param aggregationBuilder
+     * @param query
+     * @return
+     */
+    public SearchResponse aggregations(String indexName, AggregationBuilder aggregationBuilder,
+                                       List<Map<String, Object>>query) {
+        SearchRequest searchRequest = new SearchRequest();
+        searchRequest.indices(indexName);
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.fetchSource(false);
+        sourceBuilder.size(0);
+        sourceBuilder.query(ElasticSearchQueryBuilder.build(query));
+        sourceBuilder.aggregation(aggregationBuilder);
+        searchRequest.source(sourceBuilder);
+        return query(searchRequest);
+    }
+
+    /**
+     * 聚合
+     *
+     * @param indexName
+     * @param aggregationBuilder
+     * @param query
+     * @return
+     */
+    public SearchResponse aggregations(String indexName, AggregationBuilder aggregationBuilder,
+                                       Map<String, Object>query) {
+        SearchRequest searchRequest = new SearchRequest();
+        searchRequest.indices(indexName);
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.fetchSource(false);
+        sourceBuilder.size(0);
+        sourceBuilder.query(ElasticSearchQueryBuilder.build(query));
+        sourceBuilder.aggregation(aggregationBuilder);
+        searchRequest.source(sourceBuilder);
+        return query(searchRequest);
+    }
+
+    /**
+     * 聚合
+     *
+     * @param indexName
+     * @param aggregationBuilder
+     * @param jsonString
+     * @return
+     */
+    public SearchResponse aggregations(String indexName, AggregationBuilder aggregationBuilder,
+                                       String jsonString) {
+        SearchRequest searchRequest = new SearchRequest();
+        searchRequest.indices(indexName);
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.fetchSource(false);
+        sourceBuilder.size(0);
+        sourceBuilder.query(ElasticSearchQueryBuilder.build(jsonString));
+        sourceBuilder.aggregation(aggregationBuilder);
+        searchRequest.source(sourceBuilder);
+        return query(searchRequest);
+    }
+
+    /**
+     * 聚合
+     *
+     * @param indexName
+     * @param aggregationBuilder
+     * @return
+     */
+    public SearchResponse aggregations(String indexName, AggregationBuilder aggregationBuilder) {
+        SearchRequest searchRequest = new SearchRequest();
+        searchRequest.indices(indexName);
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.fetchSource(false);
+        sourceBuilder.size(0);
+        sourceBuilder.aggregation(aggregationBuilder);
+        searchRequest.source(sourceBuilder);
+        return query(searchRequest);
+    }
+
+    /**
      * 查询
      *
      * @param searchRequest
@@ -362,8 +444,7 @@ public class ElasticSearchQueryUtils {
      * @param excludeFields
      * @return
      */
-    protected SearchRequest buildRequest(String index, Map<String, Object> query, int size,
-                                         int from,
+    protected SearchRequest buildRequest(String index, Map<String, Object> query, int size, int from,
                                          long timeValueSeconds, Map<String, Integer> sort,
                                          String[] includeFields, String[] excludeFields) {
         QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(query);
