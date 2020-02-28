@@ -274,8 +274,12 @@ class ElasticSearchQueryUtilsTest {
         searchRequest.source(sourceBuilder);
         SearchResponse searchResponse = utils.query(searchRequest);
         ParsedValueCount count = searchResponse.getAggregations().get("count");
-        System.out.print(searchResponse);
         assertEquals(1000000, count.getValue());
+    }
+
+    @Test
+    void testSearchWithAggregations() {
+        
     }
 
 }
