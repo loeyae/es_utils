@@ -254,13 +254,19 @@ public class ElasticSearchQueryFactory {
         if (QUERY_TYPE_COMMON_TERMS == key) {
             return "commonTermsQuery";
         }
-        StringBuilder methodName = new StringBuilder();
+        String methodName = underlineToCamelCase(key);
+        methodName += "Query";
+        return lcFirst(methodName);
+    }
+
+    static public String underlineToCamelCase(String key) {
+
+        StringBuilder stringBuilder = new StringBuilder();
         String[] keys = key.split("_");
         Arrays.asList(keys).forEach(k -> {
-            methodName.append(ucFirst(k.toLowerCase()));
+            stringBuilder.append(ucFirst(k.toLowerCase()));
         });
-        methodName.append("Query");
-        return lcFirst(methodName.toString());
+        return stringBuilder.toString();
     }
 
     /**
