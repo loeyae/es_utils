@@ -196,6 +196,9 @@ public class ElasticSearchAggregationBuilder {
      */
     static public AggregationBuilder builder(String key, Object aggregation) {
         String className = ALL_AGGREGATION_BUILDER_MAP.get(key);
+        if (null == className) {
+            return null;
+        }
         Map<String, Object> parsedAggregation = new HashMap<>();
         List<Map<String, Object>> subAggregation = new ArrayList<>();
         if (aggregation instanceof String) {
