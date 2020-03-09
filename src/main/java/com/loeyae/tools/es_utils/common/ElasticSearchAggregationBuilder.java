@@ -141,7 +141,7 @@ public class ElasticSearchAggregationBuilder {
      * @param jsonString
      * @return
      */
-    public List<AggregationBuilder> build(String jsonString) {
+    static public List<AggregationBuilder> build(String jsonString) {
         Object jsonArray = JSONArray.parseArray(jsonString);
         if (jsonArray instanceof Map) {
             return build((Map)jsonArray);
@@ -157,7 +157,7 @@ public class ElasticSearchAggregationBuilder {
      * @param aggregations
      * @return
      */
-    public List<AggregationBuilder> build(List<Map<String, Object>> aggregations) {
+    static public List<AggregationBuilder> build(List<Map<String, Object>> aggregations) {
         List<AggregationBuilder> aggregationBuilderList = new ArrayList<>();
         aggregations.forEach((item -> {
             List<AggregationBuilder> aggregationBuilders = build(item);
@@ -174,7 +174,7 @@ public class ElasticSearchAggregationBuilder {
      * @param aggregations
      * @return
      */
-    public List<AggregationBuilder> build(Map<String, Object> aggregations) {
+    static public List<AggregationBuilder> build(Map<String, Object> aggregations) {
         List<AggregationBuilder> aggregationBuilderList = new ArrayList<>();
         aggregations.forEach((String key, Object item) -> {
             if (ALL_AGGREGATION_BUILDER_MAP.containsKey(key)) {
@@ -194,7 +194,7 @@ public class ElasticSearchAggregationBuilder {
      * @param aggregation
      * @return
      */
-    public AggregationBuilder builder(String key, Object aggregation) {
+    static public AggregationBuilder builder(String key, Object aggregation) {
         String className = ALL_AGGREGATION_BUILDER_MAP.get(key);
         Map<String, Object> parsedAggregation = new HashMap<>();
         List<Map<String, Object>> subAggregation = new ArrayList<>();
@@ -242,7 +242,7 @@ public class ElasticSearchAggregationBuilder {
      * @param aggregationBuilder
      * @param subAggregation
      */
-    protected void buildSubAggregation(AggregationBuilder aggregationBuilder, List<Map<String,
+    static protected void buildSubAggregation(AggregationBuilder aggregationBuilder, List<Map<String,
             Object>> subAggregation) {
         if (subAggregation.size() > 0) {
             subAggregation.forEach((item) -> {
