@@ -1,17 +1,20 @@
 package com.loeyae.tools.es_utils.component;
 
+import com.alibaba.fastjson.JSONObject;
 import com.loeyae.tools.es_utils.common.ElasticSearchQueryFactory;
 import org.elasticsearch.action.search.ClearScrollResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
-import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.common.xcontent.DeprecationHandler;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
+import org.elasticsearch.common.xcontent.XContentParser;
+import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.metrics.valuecount.ParsedValueCount;
+import org.elasticsearch.search.aggregations.metrics.valuecount.ValueCountAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -278,8 +282,54 @@ class ElasticSearchQueryUtilsTest {
     }
 
     @Test
-    void testSearchWithAggregations() {
-        
+    void testSearchWithQueryBuilderByXContentParser() {
+        JSONObject jsonObject = JSONObject.parseObject("{'id': [1, 2]}");
+        XContentType xContentType = XContentType.JSON;
+        try {
+            XContentParser parser =
+                    xContentType.xContent().createParser(NamedXContentRegistry.EMPTY,
+                            DeprecationHandler.THROW_UNSUPPORTED_OPERATION, jsonObject.toJSONString());
+            parser.nextToken(); //caution
+            TermsQueryBuilder termQueryBuilder = TermsQueryBuilder.fromXContent(parser);
+            SearchResponse searchResponse = utils.search(indexName, termQueryBuilder, 100, 0,
+                    new HashMap<String, Integer>(){{
+                        put("id", 1);
+                    }}, null, null);
+            assertNotNull(searchResponse);
+            ElasticSearchQueryUtils.Result result = ElasticSearchQueryUtils.result(searchResponse);
+            System.out.println(result.getSource());;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    void testSearchWithAggregationByXContentParser() {
+        JSONObject jsonObject = new JSONObject(new HashMap<String, Object>() {{
+            put(AggregationBuilder.CommonFields.FIELD.getPreferredName(), "id");
+        }});
+        XContentType xContentType = XContentType.JSON;
+        try {
+            XContentParser xContentParser =
+                    xContentType.xContent().createParser(NamedXContentRegistry.EMPTY,
+                            DeprecationHandler.THROW_UNSUPPORTED_OPERATION, jsonObject.toJSONString());
+            AggregationBuilder aggregationBuilder =
+                    ValueCountAggregationBuilder.parse("count", xContentParser);
+            SearchRequest searchRequest = new SearchRequest();
+            SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+            sourceBuilder.fetchSource(false);
+            sourceBuilder.size(0);
+            sourceBuilder.aggregation(aggregationBuilder);
+            searchRequest.indices(indexName);
+            searchRequest.source(sourceBuilder);
+            SearchResponse searchResponse = utils.query(searchRequest);
+            System.out.print(searchResponse);
+            ParsedValueCount count = searchResponse.getAggregations().get("count");
+            assertNotNull(count);
+            assertEquals(1000000, count.getValue());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }
