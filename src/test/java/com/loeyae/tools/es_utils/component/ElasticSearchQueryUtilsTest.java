@@ -297,7 +297,8 @@ class ElasticSearchQueryUtilsTest {
                     }}, null, null);
             assertNotNull(searchResponse);
             ElasticSearchQueryUtils.Result result = ElasticSearchQueryUtils.result(searchResponse);
-            System.out.println(result.getSource());;
+            assertEquals(2, result.getCount());
+            assertEquals(2, result.getTotal());
         } catch (IOException e) {
             e.printStackTrace();
         }
