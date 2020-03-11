@@ -142,7 +142,7 @@ public class ElasticSearchAggregationBuilder {
      * @return
      */
     static public List<AggregationBuilder> build(String jsonString) {
-        Object jsonArray = JSONArray.parseArray(jsonString);
+        Object jsonArray = JSONArray.parse(jsonString);
         if (jsonArray instanceof Map) {
             return build((Map)jsonArray);
         } else if (jsonArray instanceof List) {
