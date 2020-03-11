@@ -3,10 +3,9 @@ package com.loeyae.tools.es_utils.common;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.common.xcontent.DeprecationHandler;
-import org.elasticsearch.common.xcontent.NamedXContentRegistry;
-import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.common.ParseField;
+import org.elasticsearch.common.xcontent.*;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.adjacency.AdjacencyMatrixAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
@@ -50,6 +49,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * ElasticSearch Aggregation Builder Factory.
@@ -219,8 +219,11 @@ public class ElasticSearchAggregationBuilder {
             JSONObject jsonObject = new JSONObject(parsedAggregation);
             XContentType xContentType = XContentType.JSON;
             XContentParser xContentParser =
-                    xContentType.xContent().createParser(NamedXContentRegistry.EMPTY,
+                    xContentType.xContent().createParser(getQueryBuilderNamedXContentRegistry(),
                             DeprecationHandler.THROW_UNSUPPORTED_OPERATION, jsonObject.toJSONString());
+            if (null == xContentParser.currentToken()) {
+                xContentParser.nextToken();
+            }
             AggregationBuilder aggregationBuilder = (AggregationBuilder) method.invoke(null, key,
                     xContentParser);
             buildSubAggregation(aggregationBuilder, subAggregation);
@@ -255,6 +258,53 @@ public class ElasticSearchAggregationBuilder {
                 });
             });
         }
+    }
+
+    /**
+     * getQueryBuilderNamedXContentRegistry
+     *
+     * @return
+     */
+    static protected NamedXContentRegistry getQueryBuilderNamedXContentRegistry() {
+        Map<String, ContextParser<Object, ? extends QueryBuilder>> map = new HashMap<String, ContextParser<Object, ? extends QueryBuilder>>(){{
+            put(MatchQueryBuilder.NAME,
+                    (a, c) -> MatchQueryBuilder.fromXContent(a));
+            put(MatchPhrasePrefixQueryBuilder.NAME,
+                    (a, c) -> MatchPhrasePrefixQueryBuilder.fromXContent(a));
+            put(MatchPhraseQueryBuilder.NAME,
+                    (a, c) -> MatchPhraseQueryBuilder.fromXContent(a));
+            put(CommonTermsQueryBuilder.NAME,
+                    (a, c) -> CommonTermsQueryBuilder.fromXContent(a));
+            put(QueryStringQueryBuilder.NAME,
+                    (a, c) -> QueryStringQueryBuilder.fromXContent(a));
+            put(SimpleQueryStringBuilder.NAME,
+                    (a, c) -> SimpleQueryStringBuilder.fromXContent(a));
+            put(TermQueryBuilder.NAME,
+                    (a, c) -> TermQueryBuilder.fromXContent(a));
+            put(TermsQueryBuilder.NAME,
+                    (a, c) -> TermsQueryBuilder.fromXContent(a));
+            put(RangeQueryBuilder.NAME,
+                    (a, c) -> RangeQueryBuilder.fromXContent(a));
+            put(ExistsQueryBuilder.NAME,
+                    (a, c) -> ExistsQueryBuilder.fromXContent(a));
+            put(PrefixQueryBuilder.NAME,
+                    (a, c) -> PrefixQueryBuilder.fromXContent(a));
+            put(WildcardQueryBuilder.NAME,
+                    (a, c) -> WildcardQueryBuilder.fromXContent(a));
+            put(RegexpQueryBuilder.NAME,
+                    (a, c) -> RegexpQueryBuilder.fromXContent(a));
+            put(FuzzyQueryBuilder.NAME,
+                    (a, c) -> FuzzyQueryBuilder.fromXContent(a));
+            put(TypeQueryBuilder.NAME,
+                    (a, c) -> TypeQueryBuilder.fromXContent(a));
+            put(IdsQueryBuilder.NAME,
+                    (a, c) -> IdsQueryBuilder.fromXContent(a));
+        }};
+        List<NamedXContentRegistry.Entry> entries = map.entrySet().stream()
+                .map(entry -> new NamedXContentRegistry.Entry(QueryBuilder.class,
+                        new ParseField(entry.getKey()), entry.getValue()))
+                .collect(Collectors.toList());
+        return new NamedXContentRegistry(entries);
     }
 
 }
