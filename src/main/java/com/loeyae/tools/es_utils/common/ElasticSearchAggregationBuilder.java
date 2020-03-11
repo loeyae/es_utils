@@ -45,10 +45,7 @@ import org.elasticsearch.search.aggregations.metrics.weighted_avg.WeightedAvgAgg
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -63,6 +60,7 @@ public class ElasticSearchAggregationBuilder {
     private static final String DEFAULT_ERROR = "ES Utils Error: ";
     private static final String PARSE_METHOD_NAME = "parse";
     public static final String SUB_AGGREGATION_KEY = "sub";
+    public static final String AGGREGATION_NAME_KEY = "aggregation_key";
     public static final String AGGREGATION_TYPE_ADJACENCY_MATRIX = "adjacency_matrix";
     public static final String AGGREGATION_TYPE_AVG = "avg";
     public static final String AGGREGATION_TYPE_CARDINALITY = "cardinality";
@@ -201,12 +199,15 @@ public class ElasticSearchAggregationBuilder {
         }
         Map<String, Object> parsedAggregation = new HashMap<>();
         List<Map<String, Object>> subAggregation = new ArrayList<>();
+        Set<String> aggregationNameSet = new HashSet<>();
         if (aggregation instanceof String) {
             parsedAggregation.put(AggregationBuilder.CommonFields.FIELD.getPreferredName(), aggregation);
         } else if (aggregation instanceof Map) {
             ((Map) aggregation).forEach((k, item) -> {
                 if (SUB_AGGREGATION_KEY == k) {
                     subAggregation.add((Map<String, Object>) item);
+                } else if (AGGREGATION_NAME_KEY == k) {
+                    aggregationNameSet.add(item.toString());
                 } else {
                     parsedAggregation.put(String.valueOf(k), item);
                 }
@@ -224,7 +225,11 @@ public class ElasticSearchAggregationBuilder {
             if (null == xContentParser.currentToken()) {
                 xContentParser.nextToken();
             }
-            AggregationBuilder aggregationBuilder = (AggregationBuilder) method.invoke(null, key,
+            String aggregationName = key;
+            if (aggregationNameSet.size() > 0) {
+                aggregationName = aggregationNameSet.iterator().next();
+            }
+            AggregationBuilder aggregationBuilder = (AggregationBuilder) method.invoke(null, aggregationName,
                     xContentParser);
             buildSubAggregation(aggregationBuilder, subAggregation);
             return aggregationBuilder;
