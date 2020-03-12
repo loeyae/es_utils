@@ -239,7 +239,10 @@ class ElasticSearchQueryUtilsTest {
     void testAggregations() {
         AggregationBuilder aggregationBuilder =
                 AggregationBuilders.count("count").field("id");
-        SearchResponse searchResponse = utils.aggregations(indexName, aggregationBuilder);
+        List<AggregationBuilder> aggregationBuilderList = new ArrayList<AggregationBuilder>(1){{
+            add(aggregationBuilder);
+        }};
+        SearchResponse searchResponse = utils.aggregations(indexName, aggregationBuilderList);
         ParsedValueCount count = searchResponse.getAggregations().get("count");
         assertEquals(1000000, count.getValue());
         List<AggregationBuilder> aggregationBuilders = new ArrayList<AggregationBuilder>(1){{
@@ -284,6 +287,22 @@ class ElasticSearchQueryUtilsTest {
         ParsedSum sum = searchResponse4.getAggregations().get("sum");
         assertNotNull(sum);
         assertTrue(sum.getValue() > 0);
+        String aggregationString = "{'count': 'id'}";
+        SearchResponse searchResponse5 = utils.aggregations(indexName, aggregationString);
+        assertNotNull(searchResponse5);
+        ParsedValueCount count5 = searchResponse5.getAggregations().get("count");
+        assertNotNull(count5);
+        assertEquals(1000000, count5.getValue());
+        String aggregationString1 = "[{'count': 'id'}, {'sum': 'amount'}]";
+        String queryString1 = "{'id': [0, 500]}";
+        SearchResponse searchResponse6 = utils.aggregations(indexName, aggregationString1,
+                queryString1);
+        assertNotNull(searchResponse6);
+        assertEquals(2, searchResponse6.getAggregations().asList().size());
+        assertTrue(searchResponse6.getAggregations().get("count") instanceof ParsedValueCount);
+        assertEquals(500, ((ParsedValueCount)searchResponse6.getAggregations().get("count")).getValue());
+        assertTrue(searchResponse6.getAggregations().get("sum") instanceof ParsedSum);
+        assertTrue(((ParsedSum)searchResponse6.getAggregations().get("sum")).getValue() > 0);
     }
 
     @Test
