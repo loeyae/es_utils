@@ -13,8 +13,10 @@ import org.elasticsearch.index.query.*;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.metrics.sum.ParsedSum;
 import org.elasticsearch.search.aggregations.metrics.valuecount.ParsedValueCount;
 import org.elasticsearch.search.aggregations.metrics.valuecount.ValueCountAggregationBuilder;
+import org.elasticsearch.search.aggregations.support.ValueType;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -240,7 +242,10 @@ class ElasticSearchQueryUtilsTest {
         SearchResponse searchResponse = utils.aggregations(indexName, aggregationBuilder);
         ParsedValueCount count = searchResponse.getAggregations().get("count");
         assertEquals(1000000, count.getValue());
-        SearchResponse searchResponse1 = utils.aggregations(indexName, aggregationBuilder,
+        List<AggregationBuilder> aggregationBuilders = new ArrayList<AggregationBuilder>(1){{
+           add(aggregationBuilder);
+        }};
+        SearchResponse searchResponse1 = utils.aggregations(indexName, aggregationBuilders,
                 new HashMap<String, Object>(){{
                     put("id", new ArrayList<Integer>(){{
                         add(500001);
@@ -248,7 +253,7 @@ class ElasticSearchQueryUtilsTest {
                 }});
         ParsedValueCount count1 = searchResponse1.getAggregations().get("count");
         assertEquals(500000, count1.getValue());
-        SearchResponse searchResponse2 = utils.aggregations(indexName, aggregationBuilder,
+        SearchResponse searchResponse2 = utils.aggregations(indexName, aggregationBuilders,
                 new ArrayList<Map<String, Object>>(){{
                     add(new HashMap<String, Object>(){{
                         put("id", new ArrayList<Integer>(){{
@@ -260,10 +265,25 @@ class ElasticSearchQueryUtilsTest {
         ParsedValueCount count2 = searchResponse2.getAggregations().get("count");
         assertEquals(500000, count2.getValue());
         String jsonString = "{'id':[0, 500000]}";
-        SearchResponse searchResponse3 = utils.aggregations(indexName, aggregationBuilder,
+        SearchResponse searchResponse3 = utils.aggregations(indexName, aggregationBuilders,
                 jsonString);
         ParsedValueCount count3 = searchResponse3.getAggregations().get("count");
         assertEquals(500000, count3.getValue());
+        List<AggregationBuilder> aggregationBuilders1 = new ArrayList<AggregationBuilder>(){{
+            add(AggregationBuilders.count("count").field("id"));
+            add(AggregationBuilders.sum("sum").field("amount").valueType(ValueType.DOUBLE));
+        }};
+        String queryString = "{'id': [0, 500]}";
+        SearchResponse searchResponse4 = utils.aggregations(indexName, aggregationBuilders1,
+                queryString);
+        assertNotNull(searchResponse4);
+        assertNotNull(searchResponse4.getAggregations());
+        ParsedValueCount count4 = searchResponse4.getAggregations().get("count");
+        assertNotNull(count4);
+        assertEquals(500, count4.getValue());
+        ParsedSum sum = searchResponse4.getAggregations().get("sum");
+        assertNotNull(sum);
+        assertTrue(sum.getValue() > 0);
     }
 
     @Test

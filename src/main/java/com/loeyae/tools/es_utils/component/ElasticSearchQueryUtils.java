@@ -320,11 +320,12 @@ public class ElasticSearchQueryUtils {
      * 聚合
      *
      * @param indexName
-     * @param aggregationBuilder
+     * @param aggregationBuilders
      * @param query
      * @return
      */
-    public SearchResponse aggregations(String indexName, AggregationBuilder aggregationBuilder,
+    public SearchResponse aggregations(String indexName,
+                                       List<AggregationBuilder> aggregationBuilders,
                                        List<Map<String, Object>>query) {
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(indexName);
@@ -332,7 +333,9 @@ public class ElasticSearchQueryUtils {
         sourceBuilder.fetchSource(false);
         sourceBuilder.size(0);
         sourceBuilder.query(ElasticSearchQueryBuilder.build(query));
-        sourceBuilder.aggregation(aggregationBuilder);
+        aggregationBuilders.forEach(item -> {
+            sourceBuilder.aggregation(item);
+        });
         searchRequest.source(sourceBuilder);
         return query(searchRequest);
     }
@@ -341,11 +344,12 @@ public class ElasticSearchQueryUtils {
      * 聚合
      *
      * @param indexName
-     * @param aggregationBuilder
+     * @param aggregationBuilders
      * @param query
      * @return
      */
-    public SearchResponse aggregations(String indexName, AggregationBuilder aggregationBuilder,
+    public SearchResponse aggregations(String indexName,
+                                       List<AggregationBuilder> aggregationBuilders,
                                        Map<String, Object>query) {
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(indexName);
@@ -353,7 +357,9 @@ public class ElasticSearchQueryUtils {
         sourceBuilder.fetchSource(false);
         sourceBuilder.size(0);
         sourceBuilder.query(ElasticSearchQueryBuilder.build(query));
-        sourceBuilder.aggregation(aggregationBuilder);
+        aggregationBuilders.forEach(item -> {
+            sourceBuilder.aggregation(item);
+        });
         searchRequest.source(sourceBuilder);
         return query(searchRequest);
     }
@@ -362,11 +368,12 @@ public class ElasticSearchQueryUtils {
      * 聚合
      *
      * @param indexName
-     * @param aggregationBuilder
+     * @param aggregationBuilders
      * @param jsonString
      * @return
      */
-    public SearchResponse aggregations(String indexName, AggregationBuilder aggregationBuilder,
+    public SearchResponse aggregations(String indexName,
+                                       List<AggregationBuilder> aggregationBuilders,
                                        String jsonString) {
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(indexName);
@@ -374,7 +381,9 @@ public class ElasticSearchQueryUtils {
         sourceBuilder.fetchSource(false);
         sourceBuilder.size(0);
         sourceBuilder.query(ElasticSearchQueryBuilder.build(jsonString));
-        sourceBuilder.aggregation(aggregationBuilder);
+        aggregationBuilders.forEach(item -> {
+            sourceBuilder.aggregation(item);
+        });
         searchRequest.source(sourceBuilder);
         return query(searchRequest);
     }
