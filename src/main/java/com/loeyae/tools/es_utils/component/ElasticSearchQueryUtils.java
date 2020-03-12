@@ -2,6 +2,7 @@ package com.loeyae.tools.es_utils.component;
 
 
 import com.alibaba.fastjson.JSONObject;
+import com.loeyae.tools.es_utils.common.ElasticSearchAggregationBuilder;
 import com.loeyae.tools.es_utils.common.ElasticSearchQueryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.*;
@@ -388,22 +389,55 @@ public class ElasticSearchQueryUtils {
         return query(searchRequest);
     }
 
+
     /**
      * 聚合
      *
      * @param indexName
-     * @param aggregationBuilder
+     * @param aggregationString
+     * @param queryString
      * @return
      */
-    public SearchResponse aggregations(String indexName, AggregationBuilder aggregationBuilder) {
+    public SearchResponse aggregations(String indexName, String aggregationString,
+                                       String queryString) {
+        List<AggregationBuilder> aggregationBuilderList =
+                ElasticSearchAggregationBuilder.build(aggregationString);
+        return aggregations(indexName, aggregationBuilderList, queryString);
+    }
+
+    /**
+     * 聚合
+     *
+     * @param indexName
+     * @param aggregationBuilders
+     * @return
+     */
+    public SearchResponse aggregations(String indexName,
+                                       List<AggregationBuilder> aggregationBuilders) {
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(indexName);
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
         sourceBuilder.fetchSource(false);
         sourceBuilder.size(0);
-        sourceBuilder.aggregation(aggregationBuilder);
+        aggregationBuilders.forEach(item -> {
+            sourceBuilder.aggregation(item);
+        });
         searchRequest.source(sourceBuilder);
         return query(searchRequest);
+    }
+
+
+    /**
+     * 聚合
+     *
+     * @param indexName
+     * @param aggregations
+     * @return
+     */
+    public SearchResponse aggregations(String indexName, String aggregations) {
+        List<AggregationBuilder> aggregationBuilderList =
+                ElasticSearchAggregationBuilder.build(aggregations);
+        return aggregations(indexName, aggregationBuilderList);
     }
 
     /**
