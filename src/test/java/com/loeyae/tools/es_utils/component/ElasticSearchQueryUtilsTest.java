@@ -1,7 +1,6 @@
 package com.loeyae.tools.es_utils.component;
 
 import com.alibaba.fastjson.JSONObject;
-import com.loeyae.tools.es_utils.common.ElasticSearchQueryFactory;
 import org.elasticsearch.action.search.ClearScrollResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -202,9 +201,10 @@ class ElasticSearchQueryUtilsTest {
                 add(null);
                 add(10);
             }});
-            put(ElasticSearchQueryFactory.QUERY_TYPE_QUERY_STRING,
+            put(QueryStringQueryBuilder.NAME,
                     new HashMap<String, Object>(){{
-                        put("message", "测试");
+                        put("default_field", "message");
+                        put("query", "测试");
                     }});
         }};
         SearchResponse searchResponse = utils.search(indexName, search, 100, 0,
@@ -363,7 +363,6 @@ class ElasticSearchQueryUtilsTest {
             searchRequest.indices(indexName);
             searchRequest.source(sourceBuilder);
             SearchResponse searchResponse = utils.query(searchRequest);
-            System.out.print(searchResponse);
             ParsedValueCount count = searchResponse.getAggregations().get("count");
             assertNotNull(count);
             assertEquals(1000000, count.getValue());

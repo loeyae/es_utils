@@ -1,10 +1,12 @@
 package com.loeyae.tools.es_utils.common;
 
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.global.GlobalAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.nested.NestedAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregator;
 import org.elasticsearch.search.aggregations.metrics.avg.AvgAggregationBuilder;
@@ -23,13 +25,14 @@ class ElasticSearchAggregationBuilderTest {
 
     @Test
     void testBuild() {
+        System.out.print(ElasticSearchAggregationBuilder.ALL_AGGREGATION_BUILDER_MAP);
         String jsonString = "{'avg': {'field': 'id'}}";
         List<AggregationBuilder> aggregationBuilderList = ElasticSearchAggregationBuilder.build(jsonString);
         assertNotNull(aggregationBuilderList);
         assertEquals(1, aggregationBuilderList.size());
         AggregationBuilder aggregationBuilder = aggregationBuilderList.get(0);
         assertTrue(aggregationBuilder instanceof AvgAggregationBuilder);
-        assertEquals(ElasticSearchAggregationBuilder.AGGREGATION_TYPE_AVG,
+        assertEquals(AvgAggregationBuilder.NAME,
                 aggregationBuilder.getName());
         assertEquals("id", ((AvgAggregationBuilder)aggregationBuilder).field());
         String jsonString1 = "[{'count': {'field': 'id'}}, {'sum': {'field': 'amount'}}]";
@@ -52,7 +55,7 @@ class ElasticSearchAggregationBuilderTest {
         assertTrue(aggregationBuilderList3.get(0) instanceof SumAggregationBuilder);
         assertEquals("amount", ((SumAggregationBuilder)aggregationBuilderList3.get(0)).field());
         Map<String, Object> aggregation = new HashMap<String, Object>(){{
-            put(ElasticSearchAggregationBuilder.AGGREGATION_TYPE_AVG, "id");
+            put(AvgAggregationBuilder.NAME, "id");
         }};
         List<AggregationBuilder> aggregationBuilderList4 =
                 ElasticSearchAggregationBuilder.build(aggregation);
@@ -61,7 +64,7 @@ class ElasticSearchAggregationBuilderTest {
         assertTrue(aggregationBuilderList4.get(0) instanceof  AvgAggregationBuilder);
         assertEquals("id", ((AvgAggregationBuilder)aggregationBuilderList4.get(0)).field());
         Map<String, Object> aggregation1 = new HashMap<String, Object>(){{
-            put(ElasticSearchAggregationBuilder.AGGREGATION_TYPE_SUM, "amount");
+            put(SumAggregationBuilder.NAME, "amount");
             put(ElasticSearchAggregationBuilder.AGGREGATION_TYPE_COUNT, "id");
         }};
         List<AggregationBuilder> aggregationBuilderList5 =
@@ -105,16 +108,17 @@ class ElasticSearchAggregationBuilderTest {
     @Test
     void testBuilder() {
         AggregationBuilder aggregationBuilder =
-                ElasticSearchAggregationBuilder.builder(ElasticSearchAggregationBuilder.AGGREGATION_TYPE_AVG, "id");
+                ElasticSearchAggregationBuilder.builder(AvgAggregationBuilder.NAME, "id");
         assertNotNull(aggregationBuilder);
         assertTrue(aggregationBuilder instanceof AvgAggregationBuilder);
-        assertEquals(ElasticSearchAggregationBuilder.AGGREGATION_TYPE_AVG, aggregationBuilder.getName());
+        assertEquals(AvgAggregationBuilder.NAME, aggregationBuilder.getName());
         assertEquals("id", ((AvgAggregationBuilder)aggregationBuilder).field());
         AggregationBuilder aggregationBuilder1 = ElasticSearchAggregationBuilder.builder("test",
                 "id");
         assertNull(aggregationBuilder1);
         AggregationBuilder aggregationBuilder2 =
-                ElasticSearchAggregationBuilder.builder(ElasticSearchAggregationBuilder.AGGREGATION_TYPE_RANGE, new HashMap<String, Object>(){{
+                ElasticSearchAggregationBuilder.builder(RangeQueryBuilder.NAME, new HashMap<String,
+                        Object>(){{
                     put(AggregationBuilder.CommonFields.FIELD.getPreferredName(), "id");
                     put(RangeAggregator.RANGES_FIELD.getPreferredName(), new HashMap<String, Object>(){{
                         put(RangeAggregator.Range.FROM_FIELD.getPreferredName(), 1);
@@ -130,7 +134,7 @@ class ElasticSearchAggregationBuilderTest {
         assertEquals(1, range.getFrom());
         assertEquals(100, range.getTo());
         AggregationBuilder aggregationBuilder3 =
-                ElasticSearchAggregationBuilder.builder(ElasticSearchAggregationBuilder.AGGREGATION_TYPE_SUM, new HashMap<String, Object>(){{
+                ElasticSearchAggregationBuilder.builder(SumAggregationBuilder.NAME, new HashMap<String, Object>(){{
                     put(AggregationBuilder.CommonFields.FIELD.getPreferredName(), "id");
                     put(AggregationBuilder.CommonFields.VALUE_TYPE.getPreferredName(),
                             ValueType.DOUBLE.getPreferredName());
@@ -140,15 +144,16 @@ class ElasticSearchAggregationBuilderTest {
         assertEquals(ValueType.DOUBLE,
                 ((SumAggregationBuilder)aggregationBuilder3).valueType());
         AggregationBuilder aggregationBuilder4 =
-                ElasticSearchAggregationBuilder.builder(ElasticSearchAggregationBuilder.AGGREGATION_TYPE_GLOBAL, null);
+                ElasticSearchAggregationBuilder.builder(GlobalAggregationBuilder.NAME, null);
         assertNotNull(aggregationBuilder4);
         assertTrue(aggregationBuilder4 instanceof GlobalAggregationBuilder);
         AggregationBuilder aggregationBuilder5 =
-                ElasticSearchAggregationBuilder.builder(ElasticSearchAggregationBuilder.AGGREGATION_TYPE_NESTED, new HashMap<String, Object>(){{
+                ElasticSearchAggregationBuilder.builder(NestedAggregationBuilder.NAME,
+                        new HashMap<String, Object>(){{
                     put("path", "id");
                     put(ElasticSearchAggregationBuilder.SUB_AGGREGATION_KEY, new HashMap<String,
                      Object>(){{
-                        put(ElasticSearchAggregationBuilder.AGGREGATION_TYPE_FILTER,
+                        put(FilterAggregationBuilder.NAME,
                                 new HashMap<String, Object>(){{
                                     put(TermQueryBuilder.NAME, new HashMap<String, Object>(){{
                                         put("id", 1);
