@@ -1,7 +1,6 @@
 package com.loeyae.tools.es_utils.component;
 
 
-import com.alibaba.fastjson.JSONObject;
 import com.loeyae.tools.es_utils.common.ElasticSearchAggregationBuilder;
 import com.loeyae.tools.es_utils.common.ElasticSearchQueryBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +20,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.*;
+
+import static com.alibaba.fastjson.JSON.toJSONString;
 
 /**
  * elastic search query.
@@ -70,15 +71,24 @@ public class ElasticSearchQueryUtils {
             aggregations = parseAggregations();
         }
 
+        /**
+         * parseSource
+         *
+         * @return List of data
+         */
         public List<Map<String, Object>> parseSource() {
             List<Map<String, Object>> result =
                     new ArrayList<>(searchResponse.getHits().getHits().length);
-            this.searchResponse.getHits().iterator().forEachRemaining(item -> {
-                result.add(item.getSourceAsMap());
-            });
+            this.searchResponse.getHits().iterator().forEachRemaining(
+                    item -> result.add(item.getSourceAsMap()));
             return result;
         }
 
+        /**
+         * parseAggregations
+         *
+         * @return Map of Aggregation
+         */
         public Map<String, Aggregation> parseAggregations() {
             return searchResponse.getAggregations().asMap();
         }
@@ -86,51 +96,77 @@ public class ElasticSearchQueryUtils {
         /**
          * Iterator
          *
-         * @return
+         * @return instance of Iterator
          */
         public Iterator<Map<String, Object>> iterator() {
             return source.iterator();
         }
 
+        /**
+         * getScrollId
+         *
+         * @return scroll id
+         */
         public String getScrollId() {
             return scrollId;
         }
 
+        /**
+         * get Total
+         *
+         * @return total
+         */
         public long getTotal() {
             return total;
         }
 
+        /**
+         * getCount
+         *
+         * @return count
+         */
         public long getCount() {
             return count;
         }
 
+        /**
+         * getSource
+         *
+         * @return List of data
+         */
         public List<Map<String, Object>> getSource() {
             return source;
         }
 
+        /**
+         * getSearchResponse
+         *
+         * @return instance of SearchResponse
+         */
         public SearchResponse getSearchResponse() {
             return searchResponse;
         }
 
         @Override
         public String toString() {
-            Map<String, Object> jsonMap = new HashMap<String, Object>(){{
-                put("scrollId", scrollId);
-                put("total", total);
-                put("count", count);
-                put("source", source);
-            }};
-            return JSONObject.toJSONString(jsonMap);
+            Map<String, Object> jsonMap = new HashMap<>(5);
+            jsonMap.put("scrollId", scrollId);
+            jsonMap.put("total", total);
+            jsonMap.put("count", count);
+            jsonMap.put("source", source);
+            jsonMap.put("aggregations", aggregations);
+            return toJSONString(jsonMap);
         }
 
     }
 
     /**
+     * result
      *
-     * @param searchResponse
-     * @return
+     * @param searchResponse instance of SearchResponse
+     * @return instance of Result
      */
-    static public Result result(SearchResponse searchResponse) {
+    public static Result result(SearchResponse searchResponse) {
         Result result = new Result();
         result.init(searchResponse);
         return result;
@@ -139,14 +175,14 @@ public class ElasticSearchQueryUtils {
     /**
      * search
      *
-     * @param index
-     * @param jsonString
-     * @param size
-     * @param from
-     * @param sort
-     * @param includeFields
-     * @param excludeFields
-     * @return
+     * @param index         index name
+     * @param jsonString    Json string of query
+     * @param size          size
+     * @param from          start
+     * @param sort          sort setting
+     * @param includeFields include fields
+     * @param excludeFields exclude fields
+     * @return instance of SearchResponse
      */
     public SearchResponse search(String index, String jsonString, int size, int from,
                                  Map<String, Integer>sort, String[] includeFields,
@@ -159,14 +195,14 @@ public class ElasticSearchQueryUtils {
     /**
      * search
      *
-     * @param index
-     * @param query
-     * @param size
-     * @param from
-     * @param sort
-     * @param includeFields
-     * @param excludeFields
-     * @return
+     * @param index         index name
+     * @param query         List of query
+     * @param size          size
+     * @param from          start
+     * @param sort          sort setting
+     * @param includeFields include fields
+     * @param excludeFields exclude fields
+     * @return instance of SearchResponse
      */
     public SearchResponse search(String index, List<Map<String, Object>> query, int size, int from,
                                  Map<String, Integer>sort, String[] includeFields,
@@ -179,14 +215,14 @@ public class ElasticSearchQueryUtils {
     /**
      * search
      *
-     * @param index
-     * @param search
-     * @param size
-     * @param from
-     * @param sort
-     * @param includeFields
-     * @param excludeFields
-     * @return
+     * @param index         index name
+     * @param search        Map of search
+     * @param size          size
+     * @param from          start
+     * @param sort          sort setting
+     * @param includeFields include fields
+     * @param excludeFields exclude fields
+     * @return instance of SearchResponse
      */
     public SearchResponse search(String index, Map<String, Object>search, int size, int from,
                                  Map<String, Integer>sort, String[] includeFields,
@@ -199,14 +235,14 @@ public class ElasticSearchQueryUtils {
     /**
      * search
      *
-     * @param index
-     * @param queryBuilder
-     * @param size
-     * @param from
-     * @param sort
-     * @param includeFields
-     * @param excludeFields
-     * @return
+     * @param index         index name
+     * @param queryBuilder  instance of QueryBuilder
+     * @param size          size
+     * @param from          start
+     * @param sort          sort setting
+     * @param includeFields include fields
+     * @param excludeFields exclude fields
+     * @return instance of SearchResponse
      */
     public SearchResponse search(String index, QueryBuilder queryBuilder, int size, int from,
                                  Map<String, Integer>sort, String[] includeFields,
@@ -219,14 +255,14 @@ public class ElasticSearchQueryUtils {
     /**
      * search
      *
-     * @param index
-     * @param jsonString
-     * @param size
-     * @param timeValueSeconds
-     * @param sort
-     * @param includeFields
-     * @param excludeFields
-     * @return
+     * @param index            index name
+     * @param jsonString       Json string of searhc
+     * @param size             size
+     * @param timeValueSeconds scroll timeout seconds
+     * @param sort             sort setting
+     * @param includeFields    include fields
+     * @param excludeFields    exclude fields
+     * @return instance of SearchResponse
      */
     public SearchResponse search(String index, String jsonString, int size, long timeValueSeconds,
                                  Map<String, Integer>sort, String[] includeFields,
@@ -239,14 +275,14 @@ public class ElasticSearchQueryUtils {
     /**
      * search
      *
-     * @param index
-     * @param query
-     * @param size
-     * @param timeValueSeconds
-     * @param sort
-     * @param includeFields
-     * @param excludeFields
-     * @return
+     * @param index            index name
+     * @param query            List of search
+     * @param size             size
+     * @param timeValueSeconds scroll timeout seconds
+     * @param sort             sort setting
+     * @param includeFields    include fields
+     * @param excludeFields    exclude fields
+     * @return instance of SearchResponse
      */
     public SearchResponse search(String index, List<Map<String, Object>> query, int size,
                                  long timeValueSeconds, Map<String, Integer>sort,
@@ -259,14 +295,14 @@ public class ElasticSearchQueryUtils {
     /**
      * search
      *
-     * @param index
-     * @param search
-     * @param size
-     * @param timeValueSeconds
-     * @param sort
-     * @param includeFields
-     * @param excludeFields
-     * @return
+     * @param index            index name
+     * @param search           Map of search
+     * @param size             size
+     * @param timeValueSeconds scroll timeout seconds
+     * @param sort             sort setting
+     * @param includeFields    include fields
+     * @param excludeFields    exclude fields
+     * @return instance of SearchResponse
      */
     public SearchResponse search(String index, Map<String, Object>search, int size,
                                  long timeValueSeconds, Map<String, Integer>sort,
@@ -279,14 +315,14 @@ public class ElasticSearchQueryUtils {
     /**
      * search
      *
-     * @param index
-     * @param queryBuilder
-     * @param size
-     * @param timeValueSeconds
-     * @param sort
-     * @param includeFields
-     * @param excludeFields
-     * @return
+     * @param index            index name
+     * @param queryBuilder     instance of QueryBuilder
+     * @param size             size
+     * @param timeValueSeconds scroll timeout seconds
+     * @param sort             sort setting
+     * @param includeFields    include fields
+     * @param excludeFields    exclude fields
+     * @return instance of SearchResponse
      */
     public SearchResponse search(String index, QueryBuilder queryBuilder, int size,
                                  long timeValueSeconds, Map<String, Integer>sort,
@@ -299,9 +335,9 @@ public class ElasticSearchQueryUtils {
     /**
      * scroll
      *
-     * @param scrollId
-     * @param timeValueSeconds
-     * @return
+     * @param scrollId         scroll id
+     * @param timeValueSeconds timeout seconds
+     * @return instance of SearchResponse
      */
     public SearchResponse scroll(String scrollId, long timeValueSeconds) {
         SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
@@ -312,8 +348,8 @@ public class ElasticSearchQueryUtils {
     /**
      * clear scroll request
      *
-     * @param scrollId
-     * @return
+     * @param scrollId scroll id
+     * @return instance of ClearScrollResponse
      */
     public ClearScrollResponse clearScroll(String... scrollId) {
         ClearScrollRequest scrollRequest = new ClearScrollRequest();
@@ -329,10 +365,10 @@ public class ElasticSearchQueryUtils {
     /**
      * 聚合
      *
-     * @param indexName
-     * @param aggregationBuilders
-     * @param query
-     * @return
+     * @param indexName           index name
+     * @param aggregationBuilders List of AggregationBuilder's instance
+     * @param query               List of search
+     * @return instance of SearchResponse
      */
     public SearchResponse aggregations(String indexName,
                                        List<AggregationBuilder> aggregationBuilders,
@@ -343,9 +379,7 @@ public class ElasticSearchQueryUtils {
         sourceBuilder.fetchSource(false);
         sourceBuilder.size(0);
         sourceBuilder.query(ElasticSearchQueryBuilder.build(query));
-        aggregationBuilders.forEach(item -> {
-            sourceBuilder.aggregation(item);
-        });
+        aggregationBuilders.forEach(sourceBuilder::aggregation);
         searchRequest.source(sourceBuilder);
         return query(searchRequest);
     }
@@ -353,10 +387,10 @@ public class ElasticSearchQueryUtils {
     /**
      * 聚合
      *
-     * @param indexName
-     * @param aggregationBuilders
-     * @param query
-     * @return
+     * @param indexName           index name
+     * @param aggregationBuilders List of AggregationBuilder's instance
+     * @param query               Map of search
+     * @return instance of SearchResponse
      */
     public SearchResponse aggregations(String indexName,
                                        List<AggregationBuilder> aggregationBuilders,
@@ -367,9 +401,7 @@ public class ElasticSearchQueryUtils {
         sourceBuilder.fetchSource(false);
         sourceBuilder.size(0);
         sourceBuilder.query(ElasticSearchQueryBuilder.build(query));
-        aggregationBuilders.forEach(item -> {
-            sourceBuilder.aggregation(item);
-        });
+        aggregationBuilders.forEach(sourceBuilder::aggregation);
         searchRequest.source(sourceBuilder);
         return query(searchRequest);
     }
@@ -377,10 +409,10 @@ public class ElasticSearchQueryUtils {
     /**
      * 聚合
      *
-     * @param indexName
-     * @param aggregationBuilders
-     * @param jsonString
-     * @return
+     * @param indexName           index name
+     * @param aggregationBuilders List of AggregationBuilder's instance
+     * @param jsonString          Json string of search
+     * @return instance of SearchResponse
      */
     public SearchResponse aggregations(String indexName,
                                        List<AggregationBuilder> aggregationBuilders,
@@ -391,9 +423,7 @@ public class ElasticSearchQueryUtils {
         sourceBuilder.fetchSource(false);
         sourceBuilder.size(0);
         sourceBuilder.query(ElasticSearchQueryBuilder.build(jsonString));
-        aggregationBuilders.forEach(item -> {
-            sourceBuilder.aggregation(item);
-        });
+        aggregationBuilders.forEach(sourceBuilder::aggregation);
         searchRequest.source(sourceBuilder);
         return query(searchRequest);
     }
@@ -402,10 +432,10 @@ public class ElasticSearchQueryUtils {
     /**
      * 聚合
      *
-     * @param indexName
-     * @param aggregationString
-     * @param queryString
-     * @return
+     * @param indexName         index name
+     * @param aggregationString Json string of aggregation
+     * @param queryString       Json string of search
+     * @return instance of SearchResponse
      */
     public SearchResponse aggregations(String indexName, String aggregationString,
                                        String queryString) {
@@ -417,9 +447,9 @@ public class ElasticSearchQueryUtils {
     /**
      * 聚合
      *
-     * @param indexName
-     * @param aggregationBuilders
-     * @return
+     * @param indexName           index name
+     * @param aggregationBuilders List of AggregationBuilder's instance
+     * @return instance of SearchResponse
      */
     public SearchResponse aggregations(String indexName,
                                        List<AggregationBuilder> aggregationBuilders) {
@@ -428,9 +458,7 @@ public class ElasticSearchQueryUtils {
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
         sourceBuilder.fetchSource(false);
         sourceBuilder.size(0);
-        aggregationBuilders.forEach(item -> {
-            sourceBuilder.aggregation(item);
-        });
+        aggregationBuilders.forEach(sourceBuilder::aggregation);
         searchRequest.source(sourceBuilder);
         return query(searchRequest);
     }
@@ -439,9 +467,9 @@ public class ElasticSearchQueryUtils {
     /**
      * 聚合
      *
-     * @param indexName
-     * @param aggregations
-     * @return
+     * @param indexName    index name
+     * @param aggregations Json string of aggregation
+     * @return instance of SearchResponse
      */
     public SearchResponse aggregations(String indexName, String aggregations) {
         List<AggregationBuilder> aggregationBuilderList =
@@ -452,49 +480,49 @@ public class ElasticSearchQueryUtils {
     /**
      * 查询
      *
-     * @param searchRequest
-     * @return
+     * @param searchRequest instance of SearchRequest
+     * @return instance of SearchResponse
      */
     public SearchResponse query(SearchRequest searchRequest) {
+        SearchResponse searchResponse = null;
         try {
-            SearchResponse searchResponse = restHighLevelClient.search(searchRequest,
+            searchResponse = restHighLevelClient.search(searchRequest,
                     RequestOptions.DEFAULT);
-            return searchResponse;
         } catch (IOException e) {
             log.error(DEFAULT_ERROR_MSG, e);
         }
-        return null;
+        return searchResponse;
     }
 
     /**
      * Scroll查询
      *
-     * @param searchScrollRequest
-     * @return
+     * @param searchScrollRequest instance of SearchScrollRequest
+     * @return instance of SearchResponse
      */
     public SearchResponse query(SearchScrollRequest searchScrollRequest) {
+        SearchResponse searchResponse = null;
         try {
-            SearchResponse searchResponse = restHighLevelClient.scroll(searchScrollRequest,
+            searchResponse = restHighLevelClient.scroll(searchScrollRequest,
                     RequestOptions.DEFAULT);
-            return searchResponse;
         } catch (IOException e) {
             log.error(DEFAULT_ERROR_MSG, e);
         }
-        return null;
+        return searchResponse;
     }
 
     /**
      * 构建SearchRequest
      *
-     * @param index
-     * @param query
-     * @param size
-     * @param from
-     * @param timeValueSeconds
-     * @param sort
-     * @param includeFields
-     * @param excludeFields
-     * @return
+     * @param index            index name
+     * @param query            Map of search
+     * @param size             size
+     * @param from             start
+     * @param timeValueSeconds scroll timeout seconds
+     * @param sort             sort setting
+     * @param includeFields    include fields
+     * @param excludeFields    exclude fields
+     * @return instance of SearchRequest
      */
     protected SearchRequest buildRequest(String index, Map<String, Object> query, int size, int from,
                                          long timeValueSeconds, Map<String, Integer> sort,
@@ -507,15 +535,15 @@ public class ElasticSearchQueryUtils {
     /**
      * 构建SearchRequest
      *
-     * @param index
-     * @param query
-     * @param size
-     * @param from
-     * @param timeValueSeconds
-     * @param sort
-     * @param includeFields
-     * @param excludeFields
-     * @return
+     * @param index            index name
+     * @param query            List of search
+     * @param size             size
+     * @param from             start
+     * @param timeValueSeconds scroll timeout seconds
+     * @param sort             sort setting
+     * @param includeFields    include fields
+     * @param excludeFields    exclude fields
+     * @return instance of SearchRequest
      */
     protected SearchRequest buildRequest(String index, List<Map<String, Object>> query, int size,
                                          int from,
@@ -529,15 +557,15 @@ public class ElasticSearchQueryUtils {
     /**
      * 构建SearchRequest
      *
-     * @param index
-     * @param query
-     * @param size
-     * @param from
-     * @param timeValueSeconds
-     * @param sort
-     * @param includeFields
-     * @param excludeFields
-     * @return
+     * @param index            index name
+     * @param query            Json string of search
+     * @param size             size
+     * @param from             start
+     * @param timeValueSeconds scroll timeout seconds
+     * @param sort             sort setting
+     * @param includeFields    include fields
+     * @param excludeFields    exclude fields
+     * @return instance of SearchRequest
      */
     protected SearchRequest buildRequest(String index, String query, int size, int from,
                                          long timeValueSeconds, Map<String, Integer> sort,
@@ -550,15 +578,15 @@ public class ElasticSearchQueryUtils {
     /**
      * 构建SearchRequest
      *
-     * @param index
-     * @param query
-     * @param size
-     * @param from
-     * @param timeValueSeconds
-     * @param sort
-     * @param includeFields
-     * @param excludeFields
-     * @return
+     * @param index            index name
+     * @param query            instance of QueryBuilder
+     * @param size             size
+     * @param from             start
+     * @param timeValueSeconds scroll timeout seconds
+     * @param sort             sort setting
+     * @param includeFields    include fields
+     * @param excludeFields    exclude fields
+     * @return instance of SearchRequest
      */
     protected SearchRequest buildRequest(String index, QueryBuilder query, int size, int from,
                                          long timeValueSeconds, Map<String, Integer> sort,
