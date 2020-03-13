@@ -49,60 +49,52 @@ public class ElasticSearchDocumentUtils {
     /**
      * 新增
      *
-     * @param index
-     * @param type
-     * @param source
-     * @return
+     * @param index  index name
+     * @param type   doc type
+     * @param source source data
+     * @return doc id | null
      */
     public String insert(String index, String type, Map<String, Object> source) {
         IndexRequest indexRequest = new IndexRequest(index, type);
         indexRequest.source(source);
-        try {
-            IndexResponse indexResponse = restHighLevelClient.index(indexRequest,
-                    RequestOptions.DEFAULT);
-            if (RestStatus.CREATED == indexResponse.status()) {
-                return indexResponse.getId();
-            }
-        } catch (IOException e) {
-            log.error(DEFAULT_ERROR_MSG, e);
-        }
-        return null;
+        return insert(indexRequest);
     }
 
     /**
      * 新增
      *
-     * @param index
-     * @param source
-     * @return
+     * @param index  index name
+     * @param source source data
+     * @return doc id | null
      */
     public String insert(String index, Map<String, Object> source) {
         IndexRequest indexRequest = new IndexRequest(index, ElasticSearchIndicesUtils.DEFAULT_INDEX_TYPE);
         indexRequest.source(source);
-        try {
-            IndexResponse indexResponse = restHighLevelClient.index(indexRequest,
-                    RequestOptions.DEFAULT);
-            if (RestStatus.CREATED == indexResponse.status()) {
-                return indexResponse.getId();
-            }
-        } catch (IOException e) {
-            log.error(DEFAULT_ERROR_MSG, e);
-        }
-        return null;
+        return insert(indexRequest);
     }
 
     /**
      * 新增
      *
-     * @param index
-     * @param type
-     * @param source
-     * @return
-     * @para id
+     * @param index  index name
+     * @param type   doc type
+     * @param id     doc id
+     * @param source source data
+     * @return doc id | null
      */
     public String insert(String index, String type, String id, Map<String, Object> source) {
         IndexRequest indexRequest = new IndexRequest(index, type, id);
         indexRequest.source(source);
+        return insert(indexRequest);
+    }
+
+    /**
+     * insert
+     *
+     * @param indexRequest instance of IndexRequest
+     * @return doc id | null
+     */
+    public String insert(IndexRequest indexRequest) {
         try {
             IndexResponse indexResponse = restHighLevelClient.index(indexRequest,
                     RequestOptions.DEFAULT);
@@ -118,31 +110,35 @@ public class ElasticSearchDocumentUtils {
     /**
      * 获取
      *
-     * @param index
-     * @param id
-     * @return
+     * @param index index name
+     * @param id    doc id
+     * @return Map of doc data
      */
     public Map<String, Object> get(String index, String id) {
         GetRequest getRequest = new GetRequest(index, ElasticSearchIndicesUtils.DEFAULT_INDEX_TYPE, id);
-        try {
-            GetResponse getResponse = restHighLevelClient.get(getRequest, RequestOptions.DEFAULT);
-            return getResponse.getSourceAsMap();
-        } catch (IOException e) {
-            log.error(DEFAULT_ERROR_MSG, e);
-        }
-        return null;
+        return get(getRequest);
     }
 
     /**
      * 获取
      *
-     * @param index
-     * @param type
-     * @param id
-     * @return
+     * @param index index name
+     * @param type  doc type
+     * @param id    doc id
+     * @return Map of doc data
      */
     public Map<String, Object> get(String index, String type, String id) {
         GetRequest getRequest = new GetRequest(index, type, id);
+        return get(getRequest);
+    }
+
+    /**
+     * get
+     *
+     * @param getRequest instance of GetRequest
+     * @return Map of doc data | null
+     */
+    public Map<String, Object> get(GetRequest getRequest) {
         try {
             GetResponse getResponse = restHighLevelClient.get(getRequest, RequestOptions.DEFAULT);
             return getResponse.getSourceAsMap();
@@ -155,85 +151,69 @@ public class ElasticSearchDocumentUtils {
     /**
      * 更新
      *
-     * @param index
-     * @param id
-     * @param source
-     * @return
+     * @param index  index name
+     * @param id     doc id
+     * @param source source data
+     * @return true | false
      */
     public boolean update(String index, String id, Map<String, Object> source) {
         UpdateRequest updateRequest = new UpdateRequest(index, ElasticSearchIndicesUtils.DEFAULT_INDEX_TYPE, id);
         updateRequest.doc(source);
-        try {
-            UpdateResponse updateResponse = restHighLevelClient.update(updateRequest,
-                    RequestOptions.DEFAULT);
-            if (RestStatus.OK == updateResponse.status() && DocWriteResponse.Result.UPDATED == updateResponse.getResult()) {
-                return true;
-            }
-        } catch (IOException e) {
-            log.error(DEFAULT_ERROR_MSG, e);
-        }
-        return false;
+        return update(updateRequest);
     }
 
     /**
      * 更新
      *
-     * @param index
-     * @param type
-     * @param id
-     * @param source
-     * @return
+     * @param index  index name
+     * @param type   doc type
+     * @param id     doc id
+     * @param source source data
+     * @return true | false
      */
     public boolean update(String index, String type, String id, Map<String, Object> source) {
         UpdateRequest updateRequest = new UpdateRequest(index, type, id);
         updateRequest.doc(source);
-        try {
-            UpdateResponse updateResponse = restHighLevelClient.update(updateRequest,
-                    RequestOptions.DEFAULT);
-            if (RestStatus.OK == updateResponse.status() && DocWriteResponse.Result.UPDATED == updateResponse.getResult()) {
-                return true;
-            }
-        } catch (IOException e) {
-            log.error(DEFAULT_ERROR_MSG, e);
-        }
-        return false;
+        return update(updateRequest);
     }
 
     /**
      * 更新
      *
-     * @param index
-     * @param id
-     * @param script
-     * @return
+     * @param index  index name
+     * @param id     doc id
+     * @param script instance of Script
+     * @return true | false
      */
     public boolean update(String index, String id, Script script) {
         UpdateRequest updateRequest = new UpdateRequest(index, ElasticSearchIndicesUtils.DEFAULT_INDEX_TYPE, id);
         updateRequest.script(script);
-        try {
-            UpdateResponse updateResponse = restHighLevelClient.update(updateRequest,
-                    RequestOptions.DEFAULT);
-            if (RestStatus.OK == updateResponse.status() && DocWriteResponse.Result.UPDATED == updateResponse.getResult()) {
-                return true;
-            }
-        } catch (IOException e) {
-            log.error(DEFAULT_ERROR_MSG, e);
-        }
-        return false;
+        return update(updateRequest);
     }
 
     /**
      * 更新
      *
-     * @param index
-     * @param type
-     * @param id
-     * @param script
-     * @return
+     * @param index  index name
+     * @param type   doc type
+     * @param id     doc id
+     * @param script isntance of Script
+     * @return true | false
      */
     public boolean update(String index, String type, String id, Script script) {
         UpdateRequest updateRequest = new UpdateRequest(index, type, id);
         updateRequest.script(script);
+        return update(updateRequest);
+    }
+
+    /**
+     * update
+     *
+     * @param updateRequest instance of UpdateRequest
+     * @return true | false
+     */
+    public boolean update(UpdateRequest updateRequest) {
+
         try {
             UpdateResponse updateResponse = restHighLevelClient.update(updateRequest,
                     RequestOptions.DEFAULT);
@@ -249,34 +229,35 @@ public class ElasticSearchDocumentUtils {
     /**
      * 删除
      *
-     * @param index
-     * @param id
-     * @return
+     * @param index index name
+     * @param id    doc id
+     * @return true | false
      */
     public boolean delete(String index, String id) {
         DeleteRequest deleteRequest = new DeleteRequest(index, ElasticSearchIndicesUtils.DEFAULT_INDEX_TYPE, id);
-        try {
-            DeleteResponse deleteResponse = restHighLevelClient.delete(deleteRequest,
-                    RequestOptions.DEFAULT);
-            if (RestStatus.OK == deleteResponse.status() && DocWriteResponse.Result.DELETED == deleteResponse.getResult()) {
-                return true;
-            }
-        } catch (IOException e) {
-            log.error(DEFAULT_ERROR_MSG, e);
-        }
-        return false;
+        return delete(deleteRequest);
     }
 
     /**
      * 删除
      *
-     * @param index
-     * @param type
-     * @param id
-     * @return
+     * @param index index name
+     * @param type  doc type
+     * @param id    doc id
+     * @return true | false
      */
     public boolean delete(String index, String type, String id) {
         DeleteRequest deleteRequest = new DeleteRequest(index, type, id);
+        return delete(deleteRequest);
+    }
+
+    /**
+     * delete
+     *
+     * @param deleteRequest instance of DeleteRequest
+     * @return true | false
+     */
+    public boolean delete(DeleteRequest deleteRequest) {
         try {
             DeleteResponse deleteResponse = restHighLevelClient.delete(deleteRequest,
                     RequestOptions.DEFAULT);
@@ -292,46 +273,44 @@ public class ElasticSearchDocumentUtils {
     /**
      * 批量添加
      *
-     * @param index
-     * @param sources
-     * @return
+     * @param index   index name
+     * @param sources List of source data
+     * @return Array of doc id
      */
     public String[] bulkInsert(String index, List<Map<String, Object>> sources) {
         BulkRequest bulkRequest = new BulkRequest();
         sources.forEach(item -> {
             bulkRequest.add(new IndexRequest(index, ElasticSearchIndicesUtils.DEFAULT_INDEX_TYPE).source(item));
         });
-        try {
-            BulkResponse bulkResponse = restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
-            String[] restStatus = new String[sources.size()];
-            int i = 0;
-            for (BulkItemResponse item : bulkResponse) {
-                restStatus[i] = (RestStatus.CREATED == item.status() ? item.getId() : null);
-                i++;
-            }
-            return restStatus;
-        } catch (IOException e) {
-            log.error(DEFAULT_ERROR_MSG, e);
-        }
-        return null;
+        return bulkInsert(bulkRequest);
     }
 
     /**
      * 批量添加
      *
-     * @param index
-     * @param type
-     * @param sources
-     * @return
+     * @param index   index name
+     * @param type    doc type
+     * @param sources List of source data
+     * @return Array of doc id
      */
     public String[] bulkInsert(String index, String type, List<Map<String, Object>> sources) {
         BulkRequest bulkRequest = new BulkRequest();
         sources.forEach(item -> {
             bulkRequest.add(new IndexRequest(index, type).source(item));
         });
+        return bulkInsert(bulkRequest);
+    }
+
+    /**
+     * bulkInsert
+     *
+     * @param bulkRequest instance of BulkRequest
+     * @return Array of doc id
+     */
+    public String[] bulkInsert(BulkRequest bulkRequest) {
         try {
             BulkResponse bulkResponse = restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
-            String[] restStatus = new String[sources.size()];
+            String[] restStatus = new String[bulkResponse.getItems().length];
             int i = 0;
             for (BulkItemResponse item : bulkResponse) {
                 restStatus[i] = (RestStatus.CREATED == item.status() ? item.getId() : null);
@@ -347,10 +326,10 @@ public class ElasticSearchDocumentUtils {
     /**
      * 根据search条件更新数据
      *
-     * @param index
-     * @param script
-     * @param search
-     * @return
+     * @param index  index name
+     * @param script instance on Script
+     * @param search Map of search
+     * @return count of updated records
      */
     public long updateByQuery(String index, Script script, Map<String,
             Object> search) {
@@ -359,24 +338,17 @@ public class ElasticSearchDocumentUtils {
         QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(search);
         updateByQueryRequest.setQuery(queryBuilder);
         updateByQueryRequest.setScript(script);
-        try {
-            BulkByScrollResponse bulkResponse =
-                    restHighLevelClient.updateByQuery(updateByQueryRequest, RequestOptions.DEFAULT);
-            return bulkResponse.getUpdated();
-        } catch (IOException e) {
-            log.error(DEFAULT_ERROR_MSG, e);
-        }
-        return 0L;
+        return updateByQuery(updateByQueryRequest);
     }
 
     /**
      * 根据search条件更新数据
      *
-     * @param index
-     * @param type
-     * @param script
-     * @param search
-     * @return
+     * @param index  index name
+     * @param type   doc type
+     * @param script instance of Script
+     * @param search Map of search
+     * @return count of updated records
      */
     public long updateByQuery(String index, String type, Script script, Map<String,
             Object> search) {
@@ -385,22 +357,15 @@ public class ElasticSearchDocumentUtils {
         QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(search);
         updateByQueryRequest.setQuery(queryBuilder);
         updateByQueryRequest.setScript(script);
-        try {
-            BulkByScrollResponse bulkResponse =
-                    restHighLevelClient.updateByQuery(updateByQueryRequest, RequestOptions.DEFAULT);
-            return bulkResponse.getUpdated();
-        } catch (IOException e) {
-            log.error(DEFAULT_ERROR_MSG, e);
-        }
-        return 0L;
+        return updateByQuery(updateByQueryRequest);
     }
 
     /**
      * 根据search条件更新数据
      *
-     * @param index
-     * @param doc
-     * @param search
+     * @param index  index name
+     * @param doc    Map of target data
+     * @param search Map of search
      * @return
      */
     public long updateByQuery(String index, Map<String, Object> doc, Map<String,
@@ -419,11 +384,11 @@ public class ElasticSearchDocumentUtils {
     /**
      * 根据search条件更新数据
      *
-     * @param index
-     * @param type
-     * @param doc
-     * @param search
-     * @return
+     * @param index  index name
+     * @param type   doc type
+     * @param doc    Map of target data
+     * @param search Map of search data
+     * @return count of updated records
      */
     public long updateByQuery(String index, String type, Map<String, Object> doc, Map<String,
             Object> search) {
@@ -439,6 +404,23 @@ public class ElasticSearchDocumentUtils {
     }
 
     /**
+     * updateByQuery
+     *
+     * @param updateByQueryRequest instance of UpdateByQueryRequest
+     * @return count of updated records
+     */
+    public long updateByQuery(UpdateByQueryRequest updateByQueryRequest) {
+        try {
+            BulkByScrollResponse bulkResponse =
+                    restHighLevelClient.updateByQuery(updateByQueryRequest, RequestOptions.DEFAULT);
+            return bulkResponse.getUpdated();
+        } catch (IOException e) {
+            log.error(DEFAULT_ERROR_MSG, e);
+        }
+        return 0L;
+    }
+
+    /**
      * 构建search参数
      *
      * @param builder
@@ -451,9 +433,9 @@ public class ElasticSearchDocumentUtils {
     /**
      * 更具search条件删除数据
      *
-     * @param index
-     * @param search
-     * @return
+     * @param index  index name
+     * @param search Map of search
+     * @return count of deleted records
      */
     public long deleteByQuery(String index, Map<String, Object> search) {
         assert null != search;
@@ -462,23 +444,16 @@ public class ElasticSearchDocumentUtils {
         deleteByQueryRequest.setDocTypes(ElasticSearchIndicesUtils.DEFAULT_INDEX_TYPE);
         QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(search);
         deleteByQueryRequest.setQuery(queryBuilder);
-        try {
-            BulkByScrollResponse bulkResponse =
-                    restHighLevelClient.deleteByQuery(deleteByQueryRequest, RequestOptions.DEFAULT);
-            return bulkResponse.getDeleted();
-        } catch (IOException e) {
-            log.error(DEFAULT_ERROR_MSG, e);
-        }
-        return 0L;
+        return deleteByQuery(deleteByQueryRequest);
     }
 
     /**
      * 更具search条件删除数据
      *
-     * @param index
-     * @param type
-     * @param search
-     * @return
+     * @param index  index name
+     * @param type   doc type
+     * @param search Map of search
+     * @return count of deleted records
      */
     public long deleteByQuery(String index, String type, Map<String, Object> search) {
         assert null != search;
@@ -487,6 +462,16 @@ public class ElasticSearchDocumentUtils {
         deleteByQueryRequest.setDocTypes(type);
         QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(search);
         deleteByQueryRequest.setQuery(queryBuilder);
+        return deleteByQuery(deleteByQueryRequest);
+    }
+
+    /**
+     * deleteByQuery
+     *
+     * @param deleteByQueryRequest instance of DeleteByQueryRequest
+     * @return count of deleted records
+     */
+    public long deleteByQuery(DeleteByQueryRequest deleteByQueryRequest) {
         try {
             BulkByScrollResponse bulkResponse =
                     restHighLevelClient.deleteByQuery(deleteByQueryRequest, RequestOptions.DEFAULT);

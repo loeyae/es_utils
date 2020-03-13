@@ -203,7 +203,7 @@ class ElasticSearchQueryUtilsTest {
             }});
             put(QueryStringQueryBuilder.NAME,
                     new HashMap<String, Object>(){{
-                        put("default_field", "message");
+                        put(QueryStringQueryBuilder.NAME_FIELD.getPreferredName(), "message");
                         put("query", "测试");
                     }});
         }};

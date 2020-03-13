@@ -1,6 +1,5 @@
 package com.loeyae.tools.es_utils.common;
 
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.common.xcontent.DeprecationHandler;
@@ -17,6 +16,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
+import static com.alibaba.fastjson.JSON.parse;
+import static org.elasticsearch.common.ParseField.CommonFields.FIELD;
+
 /**
  * ElasticSearch Aggregation Builder Factory.
  *
@@ -26,16 +28,17 @@ import java.util.*;
  */
 @Slf4j
 public class ElasticSearchAggregationBuilder {
+
     private static final String DEFAULT_ERROR = "ES Utils Error: ";
     private static final String PARSE_METHOD_NAME = "parse";
     public static final String SUB_AGGREGATION_KEY = "sub";
     public static final String AGGREGATION_NAME_KEY = "aggregation_key";
     public static final String AGGREGATION_TYPE_COUNT = "count";
 
-    public static final Map<String, String> ALL_AGGREGATION_BUILDER_MAP = new HashMap<>();
+    protected static final Map<String, String> ALL_AGGREGATION_BUILDER_MAP = new HashMap<>();
 
     static {
-        Reflections reflections = new Reflections("org.elasticsearch.search.aggregations.metrics");
+        Reflections reflections = new Reflections("org.elasticsearch.search.aggregations");
         Set<Class<? extends AggregationBuilder>> aggregationBuilders =
                 reflections.getSubTypesOf(AggregationBuilder.class);
         aggregationBuilders.forEach(item -> {
@@ -53,33 +56,39 @@ public class ElasticSearchAggregationBuilder {
                 ValueCountAggregationBuilder.class.getName());
     }
 
-    /**
-     * build
-     *
-     * @param jsonString
-     * @return
-     */
-    static public List<AggregationBuilder> build(String jsonString) {
-        Object jsonArray = JSONArray.parse(jsonString);
-        if (jsonArray instanceof Map) {
-            return build((Map)jsonArray);
-        } else if (jsonArray instanceof List) {
-            return build((List)jsonArray);
-        }
-        return null;
+    private ElasticSearchAggregationBuilder() {
+        throw new IllegalStateException("Utility class");
     }
 
     /**
      * build
      *
-     * @param aggregations
-     * @return
+     * @param jsonString query string
+     * @return List of AggregationBuilder
      */
-    static public List<AggregationBuilder> build(List<Map<String, Object>> aggregations) {
+    @SuppressWarnings("unchecked")
+    public static List<AggregationBuilder> build(String jsonString) {
+        Object jsonArray = parse(jsonString);
+        List<AggregationBuilder> aggregationBuilderList = new ArrayList<>();
+        if (jsonArray instanceof Map) {
+            aggregationBuilderList = build((Map<String, Object>) jsonArray);
+        } else if (jsonArray instanceof List) {
+            aggregationBuilderList = build((List<Map<String, Object>>) jsonArray);
+        }
+        return aggregationBuilderList;
+    }
+
+    /**
+     * build
+     *
+     * @param aggregations Map of aggregation
+     * @return List of AggregationBuilder
+     */
+    public static List<AggregationBuilder> build(List<Map<String, Object>> aggregations) {
         List<AggregationBuilder> aggregationBuilderList = new ArrayList<>();
         aggregations.forEach((item -> {
             List<AggregationBuilder> aggregationBuilders = build(item);
-            if (null != aggregationBuilders && aggregationBuilders.size() > 0) {
+            if (!aggregationBuilders.isEmpty()) {
                 aggregationBuilderList.addAll(aggregationBuilders);
             }
         }));
@@ -89,10 +98,10 @@ public class ElasticSearchAggregationBuilder {
     /**
      * build
      *
-     * @param aggregations
-     * @return
+     * @param aggregations Map of aggregation
+     * @return List of AggregationBuilder
      */
-    static public List<AggregationBuilder> build(Map<String, Object> aggregations) {
+    public static List<AggregationBuilder> build(Map<String, Object> aggregations) {
         List<AggregationBuilder> aggregationBuilderList = new ArrayList<>();
         aggregations.forEach((String key, Object item) -> {
             if (ALL_AGGREGATION_BUILDER_MAP.containsKey(key)) {
@@ -108,11 +117,12 @@ public class ElasticSearchAggregationBuilder {
     /**
      * builder
      *
-     * @param key
-     * @param aggregation
-     * @return
+     * @param key         Name of AggregationBuilder
+     * @param aggregation Map of aggregation
+     * @return instance of AggregationBuilder
      */
-    static public AggregationBuilder builder(String key, Object aggregation) {
+    @SuppressWarnings("unchecked")
+    public static AggregationBuilder builder(String key, Object aggregation) {
         String className = ALL_AGGREGATION_BUILDER_MAP.get(key);
         if (null == className) {
             return null;
@@ -121,12 +131,12 @@ public class ElasticSearchAggregationBuilder {
         List<Map<String, Object>> subAggregation = new ArrayList<>();
         Set<String> aggregationNameSet = new HashSet<>();
         if (aggregation instanceof String) {
-            parsedAggregation.put(AggregationBuilder.CommonFields.FIELD.getPreferredName(), aggregation);
+            parsedAggregation.put(FIELD.getPreferredName(), aggregation);
         } else if (aggregation instanceof Map) {
-            ((Map) aggregation).forEach((k, item) -> {
-                if (SUB_AGGREGATION_KEY == k) {
+            ((Map<String, Object>) aggregation).forEach((k, item) -> {
+                if (SUB_AGGREGATION_KEY.equals(k)) {
                     subAggregation.add((Map<String, Object>) item);
-                } else if (AGGREGATION_NAME_KEY == k) {
+                } else if (AGGREGATION_NAME_KEY.equals(k)) {
                     aggregationNameSet.add(item.toString());
                 } else {
                     parsedAggregation.put(String.valueOf(k), item);
@@ -139,29 +149,22 @@ public class ElasticSearchAggregationBuilder {
                     XContentParser.class);
             JSONObject jsonObject = new JSONObject(parsedAggregation);
             XContentType xContentType = XContentType.JSON;
-            XContentParser xContentParser =
-                    xContentType.xContent().createParser(ElasticSearchQueryBuilder.namedXContentRegistry,
-                            DeprecationHandler.THROW_UNSUPPORTED_OPERATION, jsonObject.toJSONString());
-            if (null == xContentParser.currentToken()) {
-                xContentParser.nextToken();
+            AggregationBuilder aggregationBuilder;
+            try (XContentParser xContentParser = xContentType.xContent().createParser(ElasticSearchQueryBuilder.namedXContentRegistry,
+                    DeprecationHandler.THROW_UNSUPPORTED_OPERATION, jsonObject.toJSONString())) {
+                if (null == xContentParser.currentToken()) {
+                    xContentParser.nextToken();
+                }
+                String aggregationName = key;
+                if (!aggregationNameSet.isEmpty()) {
+                    aggregationName = aggregationNameSet.iterator().next();
+                }
+                aggregationBuilder = (AggregationBuilder) method.invoke(null, aggregationName,
+                        xContentParser);
             }
-            String aggregationName = key;
-            if (aggregationNameSet.size() > 0) {
-                aggregationName = aggregationNameSet.iterator().next();
-            }
-            AggregationBuilder aggregationBuilder = (AggregationBuilder) method.invoke(null, aggregationName,
-                    xContentParser);
             buildSubAggregation(aggregationBuilder, subAggregation);
             return aggregationBuilder;
-        }catch (ClassNotFoundException e) {
-            log.error(DEFAULT_ERROR, e);
-        } catch (NoSuchMethodException e) {
-            log.error(DEFAULT_ERROR, e);
-        } catch (IOException e) {
-            log.error(DEFAULT_ERROR, e);
-        } catch (IllegalAccessException e) {
-            log.error(DEFAULT_ERROR, e);
-        } catch (InvocationTargetException e) {
+        } catch (ClassNotFoundException | NoSuchMethodException | IOException | IllegalAccessException | InvocationTargetException e) {
             log.error(DEFAULT_ERROR, e);
         }
         return null;
@@ -170,17 +173,15 @@ public class ElasticSearchAggregationBuilder {
     /**
      * buildSubAggregation
      *
-     * @param aggregationBuilder
-     * @param subAggregation
+     * @param aggregationBuilder instance of AggregationBuilder
+     * @param subAggregation List of aggregation
      */
-    static protected void buildSubAggregation(AggregationBuilder aggregationBuilder, List<Map<String,
+    protected static void buildSubAggregation(AggregationBuilder aggregationBuilder, List<Map<String,
             Object>> subAggregation) {
-        if (subAggregation.size() > 0) {
+        if (!subAggregation.isEmpty()) {
             subAggregation.forEach((item) -> {
                 List<AggregationBuilder> aggregationBuilders = build(item);
-                aggregationBuilders.forEach((i) -> {
-                    aggregationBuilder.subAggregation(i);
-                });
+                aggregationBuilders.forEach(aggregationBuilder::subAggregation);
             });
         }
     }

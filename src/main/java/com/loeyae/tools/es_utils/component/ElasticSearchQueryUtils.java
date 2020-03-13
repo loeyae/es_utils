@@ -10,6 +10,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
@@ -58,20 +59,28 @@ public class ElasticSearchQueryUtils {
 
         private List<Map<String, Object>> source;
 
+        private Map<String, Aggregation> aggregations;
+
         public void init(SearchResponse searchResponse) {
             this.searchResponse = searchResponse;
             scrollId = searchResponse.getScrollId();
             total = searchResponse.getHits().getTotalHits();
             count = searchResponse.getHits().getHits().length;
             source = parseSource();
+            aggregations = parseAggregations();
         }
 
         public List<Map<String, Object>> parseSource() {
-            List<Map<String, Object>> result =new ArrayList<>(searchResponse.getHits().getHits().length);
+            List<Map<String, Object>> result =
+                    new ArrayList<>(searchResponse.getHits().getHits().length);
             this.searchResponse.getHits().iterator().forEachRemaining(item -> {
                 result.add(item.getSourceAsMap());
             });
             return result;
+        }
+
+        public Map<String, Aggregation> parseAggregations() {
+            return searchResponse.getAggregations().asMap();
         }
 
         /**

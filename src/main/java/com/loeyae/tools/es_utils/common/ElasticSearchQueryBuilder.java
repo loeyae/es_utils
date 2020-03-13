@@ -32,10 +32,15 @@ public class ElasticSearchQueryBuilder {
     public static final String JOIN_TYPE_MUST_NOT = "must_not";
     public static final String JOIN_TYPE_SHOULD = "should";
     public static final String JOIN_TYPE_FILTER = "filter";
-    public static final Set ALL_QUERY_TYPES = new HashSet<String>();
+    protected static final Set<String> ALL_QUERY_TYPES = new HashSet<>();
 
     public static final NamedXContentRegistry namedXContentRegistry;
-    public static final Set<String> joinKeySet = new HashSet<>(4);
+    protected static final Set<String> joinKeySet = new HashSet<>(4);
+
+    private ElasticSearchQueryBuilder() {
+        throw new IllegalStateException("Utility class");
+    }
+
 
     static {
 
@@ -45,8 +50,9 @@ public class ElasticSearchQueryBuilder {
         joinKeySet.add(JOIN_TYPE_FILTER);
 
         Reflections reflections = new Reflections("org.elasticsearch.index.query");
-        Set<Class<? extends AbstractQueryBuilder>> queryBuilderClasses =
-                reflections.getSubTypesOf(AbstractQueryBuilder.class);
+
+        Set<Class<? extends QueryBuilder>> queryBuilderClasses =
+                reflections.getSubTypesOf(QueryBuilder.class);
         Map<String, ContextParser<Object, ? extends QueryBuilder>> parserMap = new HashMap<String,
                 ContextParser<Object, ? extends QueryBuilder>>(queryBuilderClasses.size());
         queryBuilderClasses.forEach(item -> {
@@ -63,7 +69,7 @@ public class ElasticSearchQueryBuilder {
                         }
                         return null;
                     });
-                    ALL_QUERY_TYPES.add(name);
+                    ALL_QUERY_TYPES.add(name.toString());
                 } catch (NoSuchFieldException | NoSuchMethodException | IllegalAccessException e) {
                     log.error(DEFAULT_ERROR, e);
                 }
@@ -80,10 +86,10 @@ public class ElasticSearchQueryBuilder {
     /**
      * 构建查询
      *
-     * @param query
-     * @return
+     * @param query Map of query
+     * @return instance of QueryBuilder
      */
-    static public QueryBuilder build(Map<String, Object> query) {
+    public static QueryBuilder build(Map<String, Object> query) {
         if (null == query) {
             return build();
         }
@@ -96,10 +102,10 @@ public class ElasticSearchQueryBuilder {
     /**
      * 构建查询
      *
-     * @param params
-     * @return
+     * @param params List of query
+     * @return instance of QueryBuilder
      */
-    static public QueryBuilder build(List<Map<String, Object>> params) {
+    public static QueryBuilder build(List<Map<String, Object>> params) {
         if (null == params) {
             return build();
         }
@@ -111,27 +117,27 @@ public class ElasticSearchQueryBuilder {
     /**
      * 构建查询
      *
-     * @param jsonString
-     * @return
+     * @param jsonString Json string of query
+     * @return instance of QueryBuilder
      */
-    static public QueryBuilder build(String jsonString) {
+    public static QueryBuilder build(String jsonString) {
         if (null == jsonString) {
             return build();
         }
         JSON json = JSON.parseObject(jsonString);
         Object query = JSONPath.eval(json, "$");
         if (query instanceof Map) {
-            return build((Map) query);
+            return build((Map<String, Object>) query);
         }
-        return build((List) query);
+        return build((List<Map<String, Object>>) query);
     }
 
     /**
      * 构建查询
      *
-     * @return
+     * @return instance of QueryBuilder
      */
-    static public QueryBuilder build() {
+    public static QueryBuilder build() {
         MatchAllQueryBuilder matchAllQueryBuilder = QueryBuilders.matchAllQuery();
         return matchAllQueryBuilder;
     }
@@ -139,10 +145,10 @@ public class ElasticSearchQueryBuilder {
     /**
      * boolQueryBuilder
      *
-     * @param query
-     * @return
+     * @param query Map of query
+     * @return instance of BoolQueryBuilder
      */
-    static public BoolQueryBuilder boolQueryBuilder(Map<String, Object> query) {
+    public static BoolQueryBuilder boolQueryBuilder(Map<String, Object> query) {
         Map<String, Object> filteredQuery = null;
         if (containsJoinKey(query)) {
             filteredQuery = filterBoolQuery(query);
@@ -150,21 +156,20 @@ public class ElasticSearchQueryBuilder {
             filteredQuery = computedBoolQuery(query);
         }
         Map<String, Object> finalFilteredQuery = filteredQuery;
-        Map<String, Object> boolQuery = new HashMap<String, Object>(1) {{
-            put(BoolQueryBuilder.NAME, finalFilteredQuery);
-        }};
+        Map<String, Object> boolQuery = new HashMap<>(1);
+        boolQuery.put(BoolQueryBuilder.NAME, finalFilteredQuery);
         return (BoolQueryBuilder) queryBuilder(boolQuery);
     }
 
     /**
      * queryBuilder
      *
-     * @param query
-     * @return
+     * @param query Map of query
+     * @return instance of QueryBuilder
      */
-    static public QueryBuilder queryBuilder(Map<String, Object> query) {
-        Map.Entry current = query.entrySet().iterator().next();
-        Map<String, Object> computed = computedQuery(current.getKey().toString(), current.getValue());
+    public static QueryBuilder queryBuilder(Map<String, Object> query) {
+        Map.Entry<String, Object> current = query.entrySet().iterator().next();
+        Map<String, Object> computed = computedQuery(current.getKey(), current.getValue());
         JSONObject jsonObject = new JSONObject(computed);
         XContentType xContentType = XContentType.JSON;
         try {
@@ -184,71 +189,69 @@ public class ElasticSearchQueryBuilder {
      * @param query
      * @return
      */
-    static protected Map<String, Object> computedBoolQuery(Map<String, Object> query) {
+    protected static Map<String, Object> computedBoolQuery(Map<String, Object> query) {
         List<Map<String, Object>> computedBoolQuery = new ArrayList<>();
-        query.forEach((key, item) -> {
-            computedBoolQuery.add(computedQuery(key, item));
-        });
-        return new HashMap<String, Object>() {{
-            put(JOIN_TYPE_MUST, computedBoolQuery);
-        }};
+        query.forEach((key, item) -> computedBoolQuery.add(computedQuery(key, item)));
+        Map<String, Object> res = new HashMap<>();
+        res.put(JOIN_TYPE_MUST, computedBoolQuery);
+        return res;
     }
 
     /**
      * computedQuery
      *
-     * @param key
-     * @param query
-     * @return
+     * @param key   Name of QueryBuilder
+     * @param query query for QueryBuilder
+     * @return Map of query
      */
-    static protected Map<String, Object> computedQuery(String key, Object query) {
+    protected static Map<String, Object> computedQuery(String key, Object query) {
             if (ALL_QUERY_TYPES.contains(key)) {
-                return new HashMap<String, Object>(1) {{
-                    put(key, query);
-                }};
+                Map<String, Object> res = new HashMap<>(1);
+                res.put(key, query);
+                return res;
             }
             if (query instanceof Object[]) {
-                return new HashMap<String, Object>(){{
-                    put(TermsQueryBuilder.NAME, new HashMap<String, Object>(1) {{
-                        put(key, query);
-                    }});
-                }};
+                Map<String, Object> res = new HashMap<>(1);
+                Map<String, Object> q = new HashMap<>(1);
+                q.put(key, query);
+                res.put(TermsQueryBuilder.NAME, q);
+                return res;
             }
             if (query instanceof List) {
                 Map<String, Object> range = new HashMap<>();
-                Iterator iterator = ((List) query).iterator();
+                Iterator<Object> iterator = ((List<Object>) query).iterator();
                 range.put(RangeQueryBuilder.FROM_FIELD.getPreferredName(), iterator.next());
                 if (iterator.hasNext()) {
                     range.put(RangeQueryBuilder.TO_FIELD.getPreferredName(), iterator.next());
                 }
-                return new HashMap<String, Object>(1){{
-                    put(RangeQueryBuilder.NAME, new HashMap<String, Object>(1) {{
-                        put(key, range);
-                    }});
-                }};
+                Map<String, Object> res =  new HashMap<>(1);
+                Map<String, Object> q = new HashMap<>(1);
+                q.put(key, range);
+                res.put(RangeQueryBuilder.NAME, q);
+                return res;
             }
             if (query instanceof Map) {
-                return new HashMap<String, Object>(1){{
-                    put(RangeQueryBuilder.NAME, new HashMap<Object, Object>(1) {{
-                        put(key, query);
-                    }});
-                }};
+                Map<String, Object> res = new HashMap<>(1);
+                Map<String, Object> q = new HashMap<>(1);
+                q.put(key, query);
+                res.put(RangeQueryBuilder.NAME, q);
+                return res;
             }
 
-            return new HashMap<String, Object>(1){{
-                put(TermQueryBuilder.NAME, new HashMap<String, Object>(1) {{
-                    put(key, query.toString());
-                }});
-            }};
+            Map<String, Object> res = new HashMap<>(1);
+            Map<String, Object> q = new HashMap<>(1);
+            q.put(key, query.toString());
+            res.put(TermQueryBuilder.NAME, q);
+            return res;
     }
 
     /**
      * filterBoolQuery
      *
-     * @param query
-     * @return
+     * @param query Map of query
+     * @return Map of query
      */
-    static protected Map<String, Object> filterBoolQuery(Map<String, Object> query) {
+    protected static Map<String, Object> filterBoolQuery(Map<String, Object> query) {
         Map<String, Object> filteredQuery = new HashMap<>(4);
         query.forEach((key, item) -> {
             if (joinKeySet.contains(key)) {
@@ -264,36 +267,30 @@ public class ElasticSearchQueryBuilder {
      * @param query
      * @return
      */
-    static protected List<Map<String, Object>> listQuery(Object query) {
+    @SuppressWarnings("unchecked")
+    protected static List<Map<String, Object>> listQuery(Object query) {
+        List<Map<String, Object>> mapList = new ArrayList<>();
         if (query instanceof List) {
-            List<Map<String, Object>> mapList = new ArrayList<>();
-            ((List) query).forEach(item -> {
-                mapList.addAll(listQuery(item));
-            });
+            ((List<?>) query).forEach(item -> mapList.addAll(listQuery(item)));
             return mapList;
         }
         if (query instanceof Map) {
-            List<Map<String, Object>> mapList = new ArrayList<>();
-            ((Map) query).forEach((key, item) -> {
-                mapList.add(computedQuery(key.toString(), item));
-            });
+            ((Map<String, Object>) query).forEach((key, item) -> mapList.add(computedQuery(key, item)));
             return mapList;
         }
-        return null;
+        return mapList;
     }
 
     /**
      * 判断是否存在连接关键词
      *
-     * @param query
-     * @return
+     * @param query Map of query
+     * @return true|false
      */
-    static public boolean containsJoinKey(Map<String, Object> query) {
-        Set<String> keySet = new HashSet<String>(){{
-            addAll(joinKeySet);
-        }};
+    public static boolean containsJoinKey(Map<String, Object> query) {
+        Set<String> keySet = new HashSet<>(joinKeySet);
         keySet.retainAll(query.keySet());
-        return keySet.size() > 0;
+        return !keySet.isEmpty();
     }
 
 }
