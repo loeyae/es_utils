@@ -165,7 +165,6 @@ public class ElasticSearchQueryBuilder {
     static public QueryBuilder queryBuilder(Map<String, Object> query) {
         Map.Entry current = query.entrySet().iterator().next();
         Map<String, Object> computed = computedQuery(current.getKey().toString(), current.getValue());
-        System.out.println(computed);
         JSONObject jsonObject = new JSONObject(computed);
         XContentType xContentType = XContentType.JSON;
         try {
