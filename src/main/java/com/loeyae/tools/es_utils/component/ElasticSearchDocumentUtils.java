@@ -279,9 +279,7 @@ public class ElasticSearchDocumentUtils {
      */
     public String[] bulkInsert(String index, List<Map<String, Object>> sources) {
         BulkRequest bulkRequest = new BulkRequest();
-        sources.forEach(item -> {
-            bulkRequest.add(new IndexRequest(index, ElasticSearchIndicesUtils.DEFAULT_INDEX_TYPE).source(item));
-        });
+        sources.forEach(item -> bulkRequest.add(new IndexRequest(index, ElasticSearchIndicesUtils.DEFAULT_INDEX_TYPE).source(item)));
         return bulkInsert(bulkRequest);
     }
 
@@ -295,9 +293,7 @@ public class ElasticSearchDocumentUtils {
      */
     public String[] bulkInsert(String index, String type, List<Map<String, Object>> sources) {
         BulkRequest bulkRequest = new BulkRequest();
-        sources.forEach(item -> {
-            bulkRequest.add(new IndexRequest(index, type).source(item));
-        });
+        sources.forEach(item -> bulkRequest.add(new IndexRequest(index, type).source(item)));
         return bulkInsert(bulkRequest);
     }
 
@@ -320,7 +316,9 @@ public class ElasticSearchDocumentUtils {
         } catch (IOException e) {
             log.error(DEFAULT_ERROR_MSG, e);
         }
-        return null;
+        String[] o;
+        o = null;
+        return o;
     }
 
     /**
@@ -366,14 +364,12 @@ public class ElasticSearchDocumentUtils {
      * @param index  index name
      * @param doc    Map of target data
      * @param search Map of search
-     * @return
+     * @return count of updated records
      */
     public long updateByQuery(String index, Map<String, Object> doc, Map<String,
             Object> search) {
         Settings.Builder settingsBuilder = Settings.builder();
-        doc.entrySet().forEach(item -> {
-            buildSettingsElement(settingsBuilder, item.getKey());
-        });
+        doc.entrySet().forEach(item -> buildSettingsElement(settingsBuilder, item.getKey()));
         Settings settings = settingsBuilder.build();
         String source = settings.toDelimitedString(';');
         Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, Script.DEFAULT_SCRIPT_LANG, source
@@ -393,9 +389,7 @@ public class ElasticSearchDocumentUtils {
     public long updateByQuery(String index, String type, Map<String, Object> doc, Map<String,
             Object> search) {
         Settings.Builder settingsBuilder = Settings.builder();
-        doc.entrySet().forEach(item -> {
-            buildSettingsElement(settingsBuilder, item.getKey());
-        });
+        doc.forEach((key, value) -> buildSettingsElement(settingsBuilder, key));
         Settings settings = settingsBuilder.build();
         String source = settings.toDelimitedString(';');
         Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, Script.DEFAULT_SCRIPT_LANG, source
@@ -423,11 +417,11 @@ public class ElasticSearchDocumentUtils {
     /**
      * 构建search参数
      *
-     * @param builder
-     * @param key
+     * @param builder instance of Settings.Builder
+     * @param key     key
      */
-    static public void buildSettingsElement(Settings.Builder builder, String key) {
-        builder.put("ctx._source."+ key, "params."+key);
+    public static void buildSettingsElement(Settings.Builder builder, String key) {
+        builder.put("ctx._source."+ key, "params."+ key);
     }
 
     /**
@@ -438,8 +432,9 @@ public class ElasticSearchDocumentUtils {
      * @return count of deleted records
      */
     public long deleteByQuery(String index, Map<String, Object> search) {
-        assert null != search;
-        assert search.size() > 0;
+        if (null == search|| search.isEmpty()) {
+            throw new AssertionError();
+        }
         DeleteByQueryRequest deleteByQueryRequest = new DeleteByQueryRequest(index);
         deleteByQueryRequest.setDocTypes(ElasticSearchIndicesUtils.DEFAULT_INDEX_TYPE);
         QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(search);
@@ -456,8 +451,9 @@ public class ElasticSearchDocumentUtils {
      * @return count of deleted records
      */
     public long deleteByQuery(String index, String type, Map<String, Object> search) {
-        assert null != search;
-        assert search.size() > 0;
+        if (null == search|| search.isEmpty()) {
+            throw new AssertionError();
+        }
         DeleteByQueryRequest deleteByQueryRequest = new DeleteByQueryRequest(index);
         deleteByQueryRequest.setDocTypes(type);
         QueryBuilder queryBuilder = ElasticSearchQueryBuilder.build(search);
