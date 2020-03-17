@@ -90,7 +90,10 @@ public class ElasticSearchQueryUtils {
          * @return Map of Aggregation
          */
         public Map<String, Aggregation> parseAggregations() {
-            return searchResponse.getAggregations().asMap();
+            if (null != searchResponse.getAggregations()){
+                return searchResponse.getAggregations().asMap();
+            }
+            return null;
         }
 
         /**
