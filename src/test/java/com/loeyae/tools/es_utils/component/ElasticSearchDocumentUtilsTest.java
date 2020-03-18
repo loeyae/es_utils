@@ -145,7 +145,7 @@ class ElasticSearchDocumentUtilsTest {
         Map<String, Object> settings1 = new HashMap<String, Object>(){{
             put("message", "message 113");
         }};
-        long ret3 = utils.updateByQuery(indexName, settings, search1);
+        long ret3 = utils.updateByQuery(indexName, settings1, search1);
         assertTrue(ret3 > 0);
         Script script2 = new Script("ctx._source.message='message 114'");
         long ret4 = utils.updateByQuery(indexName, script2, search1);
