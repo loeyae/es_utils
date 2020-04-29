@@ -26,9 +26,9 @@ import static com.alibaba.fastjson.JSON.toJSONString;
 /**
  * elastic search query.
  *
- * @date: 2020-02-12
- * @version: 1.0
- * @author: zhangyi07@beyondsoft.com
+ * @date 2020-02-12
+ * @version 1.0
+ * @author zhangyi<loeyae@gmail.com>
  */
 @Slf4j
 @Component
@@ -48,7 +48,7 @@ public class ElasticSearchQueryUtils {
     /**
      * searchResponse 解析
      */
-    static class Result {
+    static public class Result {
 
         private SearchResponse searchResponse;
 
@@ -90,7 +90,7 @@ public class ElasticSearchQueryUtils {
          * @return Map of Aggregation
          */
         public Map<String, Aggregation> parseAggregations() {
-            if (null != searchResponse.getAggregations()){
+            if (null != searchResponse.getAggregations()) {
                 return searchResponse.getAggregations().asMap();
             }
             return null;
@@ -148,6 +148,15 @@ public class ElasticSearchQueryUtils {
          */
         public SearchResponse getSearchResponse() {
             return searchResponse;
+        }
+
+        /**
+         * getAggregations
+         *
+         * @return Map of Aggregation
+         */
+        public Map<String, Aggregation> getAggregations() {
+            return aggregations;
         }
 
         @Override
@@ -390,13 +399,13 @@ public class ElasticSearchQueryUtils {
     /**
      * 聚合
      *
-     * @param indexName           index name
-     * @param aggregationBuilders List of AggregationBuilder's instance
-     * @param query               Map of search
+     * @param indexName    index name
+     * @param aggregations List of aggregation
+     * @param query        Map of search
      * @return instance of SearchResponse
      */
     public SearchResponse aggregations(String indexName,
-                                       List<AggregationBuilder> aggregationBuilders,
+                                       List<?> aggregations,
                                        Map<String, Object>query) {
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(indexName);
@@ -404,7 +413,40 @@ public class ElasticSearchQueryUtils {
         sourceBuilder.fetchSource(false);
         sourceBuilder.size(0);
         sourceBuilder.query(ElasticSearchQueryBuilder.build(query));
-        aggregationBuilders.forEach(sourceBuilder::aggregation);
+        List<AggregationBuilder> aggregationBuilderList = new ArrayList<>();
+
+        aggregations.forEach(item -> {
+            if (item instanceof AggregationBuilder) {
+                aggregationBuilderList.add((AggregationBuilder) item);
+            } else {
+                aggregationBuilderList.addAll(ElasticSearchAggregationBuilder.build(item));
+            }
+        });
+        aggregationBuilderList.forEach(sourceBuilder::aggregation);
+        searchRequest.source(sourceBuilder);
+        return query(searchRequest);
+    }
+
+    /**
+     * 聚合
+     *
+     * @param indexName    index name
+     * @param aggregations Map of aggregation
+     * @param query        Map of search
+     * @return instance of SearchResponse
+     */
+    public SearchResponse aggregations(String indexName,
+                                       Map<String, Object> aggregations,
+                                       Map<String, Object>query) {
+        SearchRequest searchRequest = new SearchRequest();
+        searchRequest.indices(indexName);
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.fetchSource(false);
+        sourceBuilder.size(0);
+        sourceBuilder.query(ElasticSearchQueryBuilder.build(query));
+        List<AggregationBuilder> aggregationBuilderList =
+                ElasticSearchAggregationBuilder.build(aggregations);
+        aggregationBuilderList.forEach(sourceBuilder::aggregation);
         searchRequest.source(sourceBuilder);
         return query(searchRequest);
     }

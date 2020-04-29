@@ -24,9 +24,9 @@ import java.util.Map;
 /**
  * elastic search utils.
  *
- * @date: 2020-02-06
- * @version: 1.0
- * @author: zhangyi07@beyondsoft.com
+ * @date 2020-02-06
+ * @version 1.0
+ * @author zhangyi<loeyae@gmail.com>
  */
 @Slf4j
 @Component
@@ -34,8 +34,8 @@ public class ElasticSearchIndicesUtils {
 
     private static final String DEFAULT_ERROR_MSG = "ES Error: ";
 
-    private static final int INDEX_DEFAULT_SHARDS = 5;
-    private static final int INDEX_DEFAULT_REPLICAS = 1;
+    public static final int INDEX_DEFAULT_SHARDS = 5;
+    public static final int INDEX_DEFAULT_REPLICAS = 1;
 
     public static final String DEFAULT_INDEX_TYPE = "_doc";
 
@@ -145,7 +145,7 @@ public class ElasticSearchIndicesUtils {
         getIndexRequest.indices(name);
         try {
             restStatus = restHighLevelClient.indices().exists(getIndexRequest,
-                            RequestOptions.DEFAULT);
+                    RequestOptions.DEFAULT);
         } catch (IOException e) {
             log.error(DEFAULT_ERROR_MSG, e);
         }

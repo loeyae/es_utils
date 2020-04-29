@@ -20,9 +20,9 @@ import java.util.stream.Collectors;
 /**
  * elastic search search tool.
  *
- * @date: 2020-02-06
- * @version: 1.0
- * @author: zhangyi07@beyondsoft.com
+ * @date 2020-02-06
+ * @version 1.0
+ * @author zhangyi<loeyae@gmail.com>
  */
 @Slf4j
 public class ElasticSearchQueryBuilder {
@@ -53,8 +53,7 @@ public class ElasticSearchQueryBuilder {
 
         Set<Class<? extends QueryBuilder>> queryBuilderClasses =
                 reflections.getSubTypesOf(QueryBuilder.class);
-        Map<String, ContextParser<Object, ? extends QueryBuilder>> parserMap = new HashMap<String,
-                ContextParser<Object, ? extends QueryBuilder>>(queryBuilderClasses.size());
+        Map<String, ContextParser<Object, ? extends QueryBuilder>> parserMap = new HashMap<>(queryBuilderClasses.size());
         queryBuilderClasses.forEach(item -> {
             if (!Modifier.isAbstract(item.getModifiers())) {
                 try {
@@ -93,7 +92,7 @@ public class ElasticSearchQueryBuilder {
         if (null == query) {
             return build();
         }
-        if (query.size() == 1 && containsJoinKey(query) == false) {
+        if (query.size() == 1 && !containsJoinKey(query)) {
             return queryBuilder(query);
         }
         return boolQueryBuilder(query);
@@ -138,8 +137,7 @@ public class ElasticSearchQueryBuilder {
      * @return instance of QueryBuilder
      */
     public static QueryBuilder build() {
-        MatchAllQueryBuilder matchAllQueryBuilder = QueryBuilders.matchAllQuery();
-        return matchAllQueryBuilder;
+        return QueryBuilders.matchAllQuery();
     }
 
     /**
@@ -205,44 +203,44 @@ public class ElasticSearchQueryBuilder {
      * @return Map of query
      */
     protected static Map<String, Object> computedQuery(String key, Object query) {
-            if (ALL_QUERY_TYPES.contains(key)) {
-                Map<String, Object> res = new HashMap<>(1);
-                res.put(key, query);
-                return res;
-            }
-            if (query instanceof Object[]) {
-                Map<String, Object> res = new HashMap<>(1);
-                Map<String, Object> q = new HashMap<>(1);
-                q.put(key, query);
-                res.put(TermsQueryBuilder.NAME, q);
-                return res;
-            }
-            if (query instanceof List) {
-                Map<String, Object> range = new HashMap<>();
-                Iterator<Object> iterator = ((List<Object>) query).iterator();
-                range.put(RangeQueryBuilder.FROM_FIELD.getPreferredName(), iterator.next());
-                if (iterator.hasNext()) {
-                    range.put(RangeQueryBuilder.TO_FIELD.getPreferredName(), iterator.next());
-                }
-                Map<String, Object> res =  new HashMap<>(1);
-                Map<String, Object> q = new HashMap<>(1);
-                q.put(key, range);
-                res.put(RangeQueryBuilder.NAME, q);
-                return res;
-            }
-            if (query instanceof Map) {
-                Map<String, Object> res = new HashMap<>(1);
-                Map<String, Object> q = new HashMap<>(1);
-                q.put(key, query);
-                res.put(RangeQueryBuilder.NAME, q);
-                return res;
-            }
-
+        if (ALL_QUERY_TYPES.contains(key)) {
+            Map<String, Object> res = new HashMap<>(1);
+            res.put(key, query);
+            return res;
+        }
+        if (query instanceof Object[]) {
             Map<String, Object> res = new HashMap<>(1);
             Map<String, Object> q = new HashMap<>(1);
-            q.put(key, query.toString());
-            res.put(TermQueryBuilder.NAME, q);
+            q.put(key, query);
+            res.put(TermsQueryBuilder.NAME, q);
             return res;
+        }
+        if (query instanceof List) {
+            Map<String, Object> range = new HashMap<>();
+            Iterator<Object> iterator = ((List<Object>) query).iterator();
+            range.put(RangeQueryBuilder.GTE_FIELD.getPreferredName(), iterator.next());
+            if (iterator.hasNext()) {
+                range.put(RangeQueryBuilder.LTE_FIELD.getPreferredName(), iterator.next());
+            }
+            Map<String, Object> res =  new HashMap<>(1);
+            Map<String, Object> q = new HashMap<>(1);
+            q.put(key, range);
+            res.put(RangeQueryBuilder.NAME, q);
+            return res;
+        }
+        if (query instanceof Map) {
+            Map<String, Object> res = new HashMap<>(1);
+            Map<String, Object> q = new HashMap<>(1);
+            q.put(key, query);
+            res.put(RangeQueryBuilder.NAME, q);
+            return res;
+        }
+
+        Map<String, Object> res = new HashMap<>(1);
+        Map<String, Object> q = new HashMap<>(1);
+        q.put(key, query.toString());
+        res.put(TermQueryBuilder.NAME, q);
+        return res;
     }
 
     /**
@@ -264,8 +262,8 @@ public class ElasticSearchQueryBuilder {
     /**
      * listQuery
      *
-     * @param query
-     * @return
+     * @param query query
+     * @return List of map
      */
     @SuppressWarnings("unchecked")
     protected static List<Map<String, Object>> listQuery(Object query) {

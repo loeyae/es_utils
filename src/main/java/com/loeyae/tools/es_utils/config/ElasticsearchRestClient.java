@@ -18,9 +18,9 @@ import java.util.Objects;
 /**
  * elastic search rest client.
  *
- * @date: 2020-02-05
- * @version: 1.0
- * @author: zhangyi07@beyondsoft.com
+ * @date 2020-02-05
+ * @version 1.0
+ * @author zhangyi<loeyae@gmail.com>
  */
 @Slf4j
 @Configuration

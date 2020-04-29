@@ -144,7 +144,7 @@ class ElasticSearchAggregationBuilderTest {
         assertEquals(ValueType.DOUBLE,
                 ((SumAggregationBuilder)aggregationBuilder3).valueType());
         AggregationBuilder aggregationBuilder4 =
-                ElasticSearchAggregationBuilder.builder(GlobalAggregationBuilder.NAME, null);
+                ElasticSearchAggregationBuilder.builder(GlobalAggregationBuilder.NAME, "id");
         assertNotNull(aggregationBuilder4);
         assertTrue(aggregationBuilder4 instanceof GlobalAggregationBuilder);
         AggregationBuilder aggregationBuilder5 =

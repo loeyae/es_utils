@@ -71,7 +71,7 @@ class ElasticSearchDocumentUtilsTest {
         boolean ret = utils.update(indexName, docType, docId, params);
         assertTrue(ret);
         boolean ret0 = utils.update(indexName, docId, params);
-        assertTrue(ret0);
+        assertFalse(ret0);
         Map<String, Object> params1 = new HashMap<>();
         params1.put("message", "message 10");
         Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, Script.DEFAULT_SCRIPT_LANG, "ctx" +

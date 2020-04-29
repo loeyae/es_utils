@@ -2,6 +2,7 @@ package com.loeyae.tools.es_utils.component;
 
 import com.loeyae.tools.es_utils.common.ElasticSearchQueryBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -33,15 +34,17 @@ import java.util.Map;
 /**
  * Elastic Search Document Utils.
  *
- * @date: 2020-02-06
- * @version: 1.0
- * @author: zhangyi07@beyondsoft.com
+ * @date 2020-02-06
+ * @version 1.0
+ * @author zhangyi<loeyae@gmail.com>
  */
 @Slf4j
 @Component
 public class ElasticSearchDocumentUtils {
 
     private static final String DEFAULT_ERROR_MSG = "ES Error: ";
+
+    private static final int MAX_RETRY_TIMES = 5;
 
     @Autowired
     RestHighLevelClient restHighLevelClient;
@@ -316,9 +319,7 @@ public class ElasticSearchDocumentUtils {
         } catch (IOException e) {
             log.error(DEFAULT_ERROR_MSG, e);
         }
-        String[] o;
-        o = null;
-        return o;
+        return null;
     }
 
     /**
@@ -369,7 +370,7 @@ public class ElasticSearchDocumentUtils {
     public long updateByQuery(String index, Map<String, Object> doc, Map<String,
             Object> search) {
         Settings.Builder settingsBuilder = Settings.builder();
-        doc.entrySet().forEach(item -> buildSettingsElement(settingsBuilder, item.getKey()));
+        doc.forEach((key, value) -> buildSettingsElement(settingsBuilder, key));
         Settings settings = settingsBuilder.build();
         String source = settings.toDelimitedString(';');
         Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, Script.DEFAULT_SCRIPT_LANG, source
@@ -405,10 +406,11 @@ public class ElasticSearchDocumentUtils {
      */
     public long updateByQuery(UpdateByQueryRequest updateByQueryRequest) {
         try {
+            updateByQueryRequest.setMaxRetries(MAX_RETRY_TIMES);
             BulkByScrollResponse bulkResponse =
                     restHighLevelClient.updateByQuery(updateByQueryRequest, RequestOptions.DEFAULT);
             return bulkResponse.getUpdated();
-        } catch (IOException e) {
+        } catch (IOException | ElasticsearchStatusException e) {
             log.error(DEFAULT_ERROR_MSG, e);
         }
         return 0L;
@@ -468,11 +470,12 @@ public class ElasticSearchDocumentUtils {
      * @return count of deleted records
      */
     public long deleteByQuery(DeleteByQueryRequest deleteByQueryRequest) {
+        deleteByQueryRequest.setMaxRetries(MAX_RETRY_TIMES);
         try {
             BulkByScrollResponse bulkResponse =
                     restHighLevelClient.deleteByQuery(deleteByQueryRequest, RequestOptions.DEFAULT);
             return bulkResponse.getDeleted();
-        } catch (IOException e) {
+        } catch (IOException | ElasticsearchStatusException e) {
             log.error(DEFAULT_ERROR_MSG, e);
         }
         return 0L;

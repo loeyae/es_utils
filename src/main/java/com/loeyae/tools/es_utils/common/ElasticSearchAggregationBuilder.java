@@ -22,9 +22,9 @@ import static org.elasticsearch.common.ParseField.CommonFields.FIELD;
 /**
  * ElasticSearch Aggregation Builder Factory.
  *
- * @date: 2020-03-06
- * @version: 1.0
- * @author: zhangyi07@beyondsoft.com
+ * @date 2020-03-06
+ * @version 1.0
+ * @author zhangyi<loeyae@gmail.com>
  */
 @Slf4j
 public class ElasticSearchAggregationBuilder {
@@ -58,6 +58,23 @@ public class ElasticSearchAggregationBuilder {
 
     private ElasticSearchAggregationBuilder() {
         throw new IllegalStateException("Utility class");
+    }
+
+    /**
+     * build
+     *
+     * @param aggregation query
+     * @return List of AggregationBuilder
+     */
+    @SuppressWarnings("unchecked")
+    public static List<AggregationBuilder> build(Object aggregation) {
+        if (aggregation instanceof Map) {
+            return build((Map<String, Object>)aggregation);
+        } else if (aggregation instanceof List) {
+            return build((List<Map<String, Object>>) aggregation);
+        } else {
+            return build(aggregation.toString());
+        }
     }
 
     /**
@@ -142,6 +159,8 @@ public class ElasticSearchAggregationBuilder {
                     parsedAggregation.put(String.valueOf(k), item);
                 }
             });
+        } else {
+            throw new IllegalArgumentException();
         }
         try {
             Class<?> aggregationBuilderClass = Class.forName(className);
